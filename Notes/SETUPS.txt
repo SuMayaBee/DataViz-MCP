@@ -1,17 +1,17 @@
-CONNECT PANEL-LIVE-SERVER TO CLAUDE.AI WEB
+CONNECT DATAVIZ-MCP TO CLAUDE.AI WEB
 ==========================================
 
-Requirements: cloudflared installed, panel-live-server installed via uv
+Requirements: cloudflared installed, dataviz-mcp installed via uv
 
 
-STEP 1 — Install panel-live-server (if not already)
+STEP 1 — Install dataviz-mcp (if not already)
 -----------------------------------------------------
-uv tool install "panel-live-server[pydata]"
+uv tool install "dataviz-mcp[pydata]"
 
 
 STEP 2 — Start the MCP server with HTTP transport
 --------------------------------------------------
-export PANEL_LIVE_SERVER_EXTERNAL_URL=<panel-tunnel-url>   (set after step 4)
+export DATAVIZ_MCP_EXTERNAL_URL=<panel-tunnel-url>   (set after step 4)
 pls mcp --transport http --port 8001
 
 
@@ -30,14 +30,14 @@ STEP 4 — Set the external URL and restart MCP
 ----------------------------------------------
 Stop the pls mcp from Step 2 (Ctrl+C), then:
 
-  export PANEL_LIVE_SERVER_EXTERNAL_URL=<url from Terminal 3>
+  export DATAVIZ_MCP_EXTERNAL_URL=<url from Terminal 3>
   pls mcp --transport http --port 8001
 
 
 STEP 5 — Add to claude.ai
 --------------------------
 1. Go to claude.ai → Settings → Connectors → Add custom connector
-2. Name: panel-live-server
+2. Name: dataviz-mcp
 3. URL: <url from Terminal 2>/mcp      ← note the /mcp at the end
 4. Hit Add
 
@@ -64,7 +64,7 @@ NOTES
 CONNECT LOCAL REPO (DEV) TO CLAUDE.AI WEB
 ==============================================================================
 
-Use this setup when you are hacking on the panel-live-server source code and
+Use this setup when you are hacking on the dataviz-mcp source code and
 want claude.ai to talk to your in-repo build instead of the installed tool.
 
 Requirements: cloudflared installed, pixi installed, repo cloned
@@ -72,8 +72,8 @@ Requirements: cloudflared installed, pixi installed, repo cloned
 ------------------------------------------------------------------------------
 STEP 1 — Clone and install in editable mode
 ------------------------------------------------------------------------------
-  git clone https://github.com/<your-fork>/panel-live-server.git
-  cd panel-live-server
+  git clone https://github.com/<your-fork>/dataviz-mcp.git
+  cd dataviz-mcp
   pixi install
   pixi run postinstall          # installs the package as editable (pip install -e .)
 
@@ -123,7 +123,7 @@ STEP 5 — Restart MCP with the Panel tunnel URL wired in
 ------------------------------------------------------------------------------
   Stop the server from Step 3 (Ctrl+C), then:
 
-    export PANEL_LIVE_SERVER_EXTERNAL_URL=<URL from Terminal 3>
+    export DATAVIZ_MCP_EXTERNAL_URL=<URL from Terminal 3>
     pixi run pls mcp --transport http --port 8001
 
   This makes every iframe URL the server returns use your public tunnel address
@@ -134,7 +134,7 @@ STEP 5 — Restart MCP with the Panel tunnel URL wired in
 STEP 6 — Register as a custom connector in claude.ai
 ------------------------------------------------------------------------------
   1. Go to claude.ai → Settings → Connectors → Add custom connector
-  2. Name:  panel-live-server (local dev)
+  2. Name:  dataviz-mcp (local dev)
   3. URL:   <URL from Terminal 2>/mcp        ← /mcp suffix is required
   4. Click Add
 
@@ -154,7 +154,7 @@ STEP 7 — Test a round-trip
 ------------------------------------------------------------------------------
 STEP 8 — Iterate on the source code
 ------------------------------------------------------------------------------
-  Edit files under src/panel_live_server/.
+  Edit files under src/dataviz_mcp/.
   Changes to most files take effect immediately (editable install).
   If you edit CLI entry-points or pyproject.toml re-run:
     pixi run postinstall
@@ -167,7 +167,7 @@ STEP 8 — Iterate on the source code
 NOTES
 ------------------------------------------------------------------------------
 - Tunnel URLs are ephemeral — they change every time cloudflared restarts.
-  Update PANEL_LIVE_SERVER_EXTERNAL_URL and re-add the connector each session.
+  Update DATAVIZ_MCP_EXTERNAL_URL and re-add the connector each session.
 - The /mcp path is required for streamable-http transport (FastMCP default).
 - Run tests before pushing:  pixi run test
 - Lint before pushing:       pixi run lint
@@ -190,12 +190,12 @@ Config file location:
 OPTION A — Hosted package (installed via uv tool or pipx)
 ------------------------------------------------------------------------------
 STEP 1 — Install
-  uv tool install "panel-live-server[pydata]"
+  uv tool install "dataviz-mcp[pydata]"
 
 STEP 2 — Add to claude_desktop_config.json
   {
     "mcpServers": {
-      "panel-live-server": {
+      "dataviz-mcp": {
         "command": "pls",
         "args": ["mcp"]
       }
@@ -214,16 +214,16 @@ STEP 4 — Test
 OPTION B — Local repo (editable install for development)
 ------------------------------------------------------------------------------
 STEP 1 — Clone and install (same as the claude.ai local repo setup above)
-  git clone https://github.com/<your-fork>/panel-live-server.git
-  cd panel-live-server
+  git clone https://github.com/<your-fork>/dataviz-mcp.git
+  cd dataviz-mcp
   pixi install && pixi run postinstall
 
 STEP 2 — Add to claude_desktop_config.json
 
   {
     "mcpServers": {
-      "panel-live-server": {
-        "command": "/home/sumayabee/Desktop/panel-live-server/.venv/bin/pls",
+      "dataviz-mcp": {
+        "command": "/home/sumayabee/Desktop/dataviz-mcp/.venv/bin/pls",
         "args": ["mcp"]
       }
     }
@@ -236,7 +236,7 @@ STEP 4 — Test
   In any chat: "Show me a simple sine wave using hvplot"
 
 STEP 5 — Iterate
-  Edit src/panel_live_server/ freely.  To pick up changes restart Claude Desktop
+  Edit src/dataviz_mcp/ freely.  To pick up changes restart Claude Desktop
   (it re-spawns the MCP process) or kill and re-spawn pls manually.
 
 
@@ -246,7 +246,7 @@ NOTES
 - No env vars needed for Claude Desktop — Panel runs on localhost:5077 and
   Claude Desktop opens the URL in your local browser, so no external URL is required.
 - To pass env vars (e.g. custom port), add an "env" key to the config block:
-    "env": { "PANEL_LIVE_SERVER_PORT": "9999" }
+    "env": { "DATAVIZ_MCP_PORT": "9999" }
 - If pls is not on PATH for Claude Desktop, use the absolute binary path instead.
 
 
@@ -265,12 +265,12 @@ Global alternative: add under "mcp.servers" in VS Code user settings.json
 OPTION A — Hosted package
 ------------------------------------------------------------------------------
 STEP 1 — Install
-  uv tool install "panel-live-server[pydata]"
+  uv tool install "dataviz-mcp[pydata]"
 
 STEP 2 — Create/edit .vscode/mcp.json
   {
     "servers": {
-      "panel-live-server": {
+      "dataviz-mcp": {
         "type": "stdio",
         "command": "pls",
         "args": ["mcp"]
@@ -279,7 +279,7 @@ STEP 2 — Create/edit .vscode/mcp.json
   }
 
 STEP 3 — Start the server
-  Command Palette → "MCP: List Servers" → Start panel-live-server
+  Command Palette → "MCP: List Servers" → Start dataviz-mcp
 
 STEP 4 — Test
   In Copilot Chat: "Show me a sine wave using hvplot"
@@ -288,27 +288,27 @@ STEP 4 — Test
 ------------------------------------------------------------------------------
 OPTION B — Local repo
 ------------------------------------------------------------------------------
-STEP 1 — Editable install (already done at /home/sumayabee/Desktop/panel-live-server)
+STEP 1 — Editable install (already done at /home/sumayabee/Desktop/dataviz-mcp)
 
 STEP 2 — Create/edit .vscode/mcp.json
   {
     "servers": {
-      "panel-live-server": {
+      "dataviz-mcp": {
         "type": "stdio",
-        "command": "/home/sumayabee/Desktop/panel-live-server/.venv/bin/pls",
+        "command": "/home/sumayabee/Desktop/dataviz-mcp/.venv/bin/pls",
         "args": ["mcp"]
       }
     }
   }
 
 STEP 3 — Start the server
-  Command Palette → "MCP: List Servers" → Start panel-live-server
+  Command Palette → "MCP: List Servers" → Start dataviz-mcp
 
 STEP 4 — Test
   In Copilot Chat: "Show me a sine wave using hvplot"
 
 STEP 5 — Iterate
-  Edit src/panel_live_server/ freely.  Restart the server after changes via
+  Edit src/dataviz_mcp/ freely.  Restart the server after changes via
   Command Palette → "MCP: Restart Server"
 
 
@@ -317,7 +317,7 @@ NOTES
 ------------------------------------------------------------------------------
 - No external URL needed — Panel runs on localhost:5077, browser opens locally.
 - To pass env vars (e.g. custom port), add an "env" block inside the server block:
-    "env": { "PANEL_LIVE_SERVER_PORT": "9999" }
+    "env": { "DATAVIZ_MCP_PORT": "9999" }
 
 
 ==============================================================================
@@ -335,12 +335,12 @@ Project-level alternative: .cursor/mcp.json in the repo root
 OPTION A — Hosted package
 ------------------------------------------------------------------------------
 STEP 1 — Install
-  uv tool install "panel-live-server[pydata]"
+  uv tool install "dataviz-mcp[pydata]"
 
 STEP 2 — Edit ~/.cursor/mcp.json
   {
     "mcpServers": {
-      "panel-live-server": {
+      "dataviz-mcp": {
         "command": "pls",
         "args": ["mcp"]
       }
@@ -348,7 +348,7 @@ STEP 2 — Edit ~/.cursor/mcp.json
   }
 
 STEP 3 — Verify
-  Cursor Settings → MCP → panel-live-server should show a green dot
+  Cursor Settings → MCP → dataviz-mcp should show a green dot
 
 STEP 4 — Test
   In Cursor Chat (Agent mode): "Show me a sine wave using hvplot"
@@ -357,26 +357,26 @@ STEP 4 — Test
 ------------------------------------------------------------------------------
 OPTION B — Local repo
 ------------------------------------------------------------------------------
-STEP 1 — Editable install (already done at /home/sumayabee/Desktop/panel-live-server)
+STEP 1 — Editable install (already done at /home/sumayabee/Desktop/dataviz-mcp)
 
 STEP 2 — Edit ~/.cursor/mcp.json
   {
     "mcpServers": {
-      "panel-live-server": {
-        "command": "/home/sumayabee/Desktop/panel-live-server/.venv/bin/pls",
+      "dataviz-mcp": {
+        "command": "/home/sumayabee/Desktop/dataviz-mcp/.venv/bin/pls",
         "args": ["mcp"]
       }
     }
   }
 
 STEP 3 — Verify
-  Cursor Settings → MCP → panel-live-server should show a green dot
+  Cursor Settings → MCP → dataviz-mcp should show a green dot
 
 STEP 4 — Test
   In Cursor Chat (Agent mode): "Show me a sine wave using hvplot"
 
 STEP 5 — Iterate
-  Edit src/panel_live_server/ freely.  Restart via Cursor Settings → MCP →
+  Edit src/dataviz_mcp/ freely.  Restart via Cursor Settings → MCP →
   toggle the server off then on.
 
 
@@ -385,7 +385,7 @@ NOTES
 ------------------------------------------------------------------------------
 - No external URL needed — Panel runs on localhost:5077, browser opens locally.
 - To pass env vars (e.g. custom port), add an "env" block inside the server block:
-    "env": { "PANEL_LIVE_SERVER_PORT": "9999" }
+    "env": { "DATAVIZ_MCP_PORT": "9999" }
 
 
 ==============================================================================
@@ -400,10 +400,10 @@ No tunneling or external URL needed.
 OPTION A — Hosted package
 ------------------------------------------------------------------------------
 STEP 1 — Install
-  uv tool install "panel-live-server[pydata]"
+  uv tool install "dataviz-mcp[pydata]"
 
 STEP 2 — Register the MCP server
-  claude mcp add panel-live-server -- pls mcp
+  claude mcp add dataviz-mcp -- pls mcp
 
 STEP 3 — Test
   Start a new session: claude
@@ -419,15 +419,15 @@ STEP 4 — Try it
 OPTION B — Local repo
 ------------------------------------------------------------------------------
 STEP 1 — Activate the venv and register using the absolute binary path
-  source /home/sumayabee/Desktop/panel-live-server/.venv/bin/activate
-  claude mcp add panel-live-server -- /home/sumayabee/Desktop/panel-live-server/.venv/bin/pls mcp
+  source /home/sumayabee/Desktop/dataviz-mcp/.venv/bin/activate
+  claude mcp add dataviz-mcp -- /home/sumayabee/Desktop/dataviz-mcp/.venv/bin/pls mcp
 
   Note: using the absolute path ensures Claude Code spawns the local build,
   not any globally installed pls.
 
 STEP 2 — Test
   Start a new session from the repo directory:
-    cd /home/sumayabee/Desktop/panel-live-server && claude
+    cd /home/sumayabee/Desktop/dataviz-mcp && claude
   Then ask: "List your available MCP tools."
   You should see show, validate, and list_packages.
 
@@ -435,9 +435,9 @@ STEP 3 — Try it
   "Show me a simple sine wave using hvplot. Use the show tool."
 
 STEP 4 — Iterate
-  Edit src/panel_live_server/ freely.  Restart the MCP server to pick up changes:
-    claude mcp remove panel-live-server
-    claude mcp add panel-live-server -- /home/sumayabee/Desktop/panel-live-server/.venv/bin/pls mcp
+  Edit src/dataviz_mcp/ freely.  Restart the MCP server to pick up changes:
+    claude mcp remove dataviz-mcp
+    claude mcp add dataviz-mcp -- /home/sumayabee/Desktop/dataviz-mcp/.venv/bin/pls mcp
 
 
 ------------------------------------------------------------------------------
@@ -445,5 +445,5 @@ NOTES
 ------------------------------------------------------------------------------
 - claude mcp add writes to ~/.claude.json (scoped to the project directory).
 - To see all registered servers: claude mcp list
-- To remove:  claude mcp remove panel-live-server
+- To remove:  claude mcp remove dataviz-mcp
 - No external URL needed — browser opens localhost:5077 directly.

@@ -1,7 +1,7 @@
-Panel Live Server — Feature Ideas & Competitive Analysis
+DataViz MCP — Feature Ideas & Competitive Analysis
 ========================================================
 
-Goal: make panel-live-server more attractive so more people adopt it. Below is
+Goal: make dataviz-mcp more attractive so more people adopt it. Below is
 a scan of comparable visualization / code-execution MCP servers, where we
 already win, and a prioritized list of what to add.
 
@@ -76,7 +76,7 @@ TIER 1 — high value, low effort (build on what already exists)
 
 4. Ship a bundled skill / prompt guide
    - AntV's biggest adoption lever is its chart-visualization skill. A
-     panel-live-server skill teaching good HoloViz patterns (the sharp edges
+     dataviz-mcp skill teaching good HoloViz patterns (the sharp edges
      the DEMO_PROMPTS work exposed) would directly cut first-try failures —
      improving the product without touching the server.
 
@@ -130,7 +130,7 @@ LARGE & MULTIDIMENSIONAL DATASET SUPPORT
 
 There are TWO different problems hiding under "large + multidimensional," and
 the HoloViz stack handles them very differently. HoloViz is arguably the BEST
-stack in the MCP-viz space for both — but panel-live-server currently ships
+stack in the MCP-viz space for both — but dataviz-mcp currently ships
 neither capability in the default path nor tells the AI they exist.
 
 Current state (found in code):
@@ -227,7 +227,7 @@ AND improves first-try success (AI sees real column names / dtypes).
 3. Storage — a registry parallel to the snippets DB
    - new SQLite table `datasets`: name (unique), source, local_path, format,
      n_rows, schema (JSON), size_bytes, description, created_at.
-   - new data dir PANEL_LIVE_SERVER_DATA_DIR, default ~/.panel-live-server/data/
+   - new data dir DATAVIZ_MCP_DATA_DIR, default ~/.dataviz-mcp/data/
    - URLs are DOWNLOADED and CACHED into that dir on registration. Important:
      /view re-executes on every render, so a "read the URL each time" design
      would re-download on every browser refresh. Cache once, read local after.
@@ -261,7 +261,7 @@ AND improves first-try success (AI sees real column names / dtypes).
 8. Web UI + config (humans too)
    - /add gets a "dataset" mode: upload a file or paste a URL -> registers it.
    - /admin (or new /data) lists datasets with schema + delete.
-   - config: PANEL_LIVE_SERVER_DATA_DIR + PANEL_LIVE_SERVER_MAX_DOWNLOAD_MB cap.
+   - config: DATAVIZ_MCP_DATA_DIR + DATAVIZ_MCP_MAX_DOWNLOAD_MB cap.
 
 9. Security (be explicit, don't hide it)
    Local-path registration = arbitrary host file read. Fine for a localhost dev

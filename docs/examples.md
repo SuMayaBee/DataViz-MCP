@@ -11,7 +11,7 @@ are in the [Panel dashboard](#panel-dashboard) and [DataFrame table](#dataframe-
     covers most examples below. For the wider PyData stack (Matplotlib, Plotly, seaborn,
     Altair, polars, duckdb, datashader, geoviews, …) add the optional extra:
     ```bash
-    pip install "panel-live-server[pydata]"
+    pip install "dataviz-mcp[pydata]"
     ```
 
 ---

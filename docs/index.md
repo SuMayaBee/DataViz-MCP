@@ -1,16 +1,16 @@
-# panel-live-server
+# dataviz-mcp
 
-[![CI](https://img.shields.io/github/actions/workflow/status/panel-extensions/panel-live-server/ci.yml?style=flat-square&branch=main)](https://github.com/panel-extensions/panel-live-server/actions/workflows/ci.yml)
-[![conda-forge](https://img.shields.io/conda/vn/conda-forge/panel-live-server?logoColor=white&logo=conda-forge&style=flat-square)](https://prefix.dev/channels/conda-forge/packages/panel-live-server)
-[![pypi](https://img.shields.io/pypi/v/panel-live-server.svg?logo=pypi&logoColor=white&style=flat-square)](https://pypi.org/project/panel-live-server)
-[![python](https://img.shields.io/pypi/pyversions/panel-live-server?logoColor=white&logo=python&style=flat-square)](https://pypi.org/project/panel-live-server)
+[![CI](https://img.shields.io/github/actions/workflow/status/panel-extensions/dataviz-mcp/ci.yml?style=flat-square&branch=main)](https://github.com/panel-extensions/dataviz-mcp/actions/workflows/ci.yml)
+[![conda-forge](https://img.shields.io/conda/vn/conda-forge/dataviz-mcp?logoColor=white&logo=conda-forge&style=flat-square)](https://prefix.dev/channels/conda-forge/packages/dataviz-mcp)
+[![pypi](https://img.shields.io/pypi/v/dataviz-mcp.svg?logo=pypi&logoColor=white&style=flat-square)](https://pypi.org/project/dataviz-mcp)
+[![python](https://img.shields.io/pypi/pyversions/dataviz-mcp?logoColor=white&logo=python&style=flat-square)](https://pypi.org/project/dataviz-mcp)
 
 Building interactive data apps with Panel, hvPlot, or HoloViews usually means: write code,
 start a server, open a browser, refresh, repeat. That loop adds up for quick experiments. And
 if you are working inside an AI assistant like Claude or GitHub Copilot, asking it to help you
 build a chart, there has been no clean way to actually see the result without leaving your tool.
 
-**panel-live-server removes that friction.** Point an MCP-compatible AI assistant at a dataset
+**dataviz-mcp removes that friction.** Point an MCP-compatible AI assistant at a dataset
 or describe the chart you want, and the result comes back rendered, live, and interactive,
 right inside the chat. Or run it standalone from the terminal: submit code through a browser UI
 and get a permanent URL back instantly.
@@ -34,7 +34,7 @@ exposed:
 - **`screenshot`**: captures a picture of an already-rendered visualization and hands it back to the AI, so it can answer follow-up questions about how the chart looks by inspecting the actual image instead of guessing from raw data
 
 <video controls autoplay muted loop style="width: 100%; max-width: 100%;">
-  <source src="assets/videos/panel-live-server-showcase-mcp.mp4" type="video/mp4">
+  <source src="assets/videos/dataviz-mcp-showcase-mcp.mp4" type="video/mp4">
 </video>
 
 Install the package, then start the MCP server:
@@ -42,19 +42,19 @@ Install the package, then start the MCP server:
 === "pixi"
 
     ```bash
-    pixi add --pypi "panel-live-server[pydata]"
+    pixi add --pypi "dataviz-mcp[pydata]"
     ```
 
 === "uv"
 
     ```bash
-    uv tool install "panel-live-server[pydata]"
+    uv tool install "dataviz-mcp[pydata]"
     ```
 
 === "pip"
 
     ```bash
-    pip install "panel-live-server[pydata]"
+    pip install "dataviz-mcp[pydata]"
     ```
 
 ```bash
@@ -86,7 +86,7 @@ Start a local web server and create interactive visualizations through a browser
 Every snippet gets its own permanent URL.
 
 <video controls autoplay muted loop style="width: 100%; max-width: 100%;">
-  <source src="assets/videos/panel-live-server-showcase.mp4" type="video/mp4">
+  <source src="assets/videos/dataviz-mcp-showcase.mp4" type="video/mp4">
 </video>
 
 Install the package, then start the server:
@@ -94,19 +94,19 @@ Install the package, then start the server:
 === "pixi"
 
     ```bash
-    pixi add --pypi "panel-live-server[pydata]"
+    pixi add --pypi "dataviz-mcp[pydata]"
     ```
 
 === "uv"
 
     ```bash
-    uv tool install "panel-live-server[pydata]"
+    uv tool install "dataviz-mcp[pydata]"
     ```
 
 === "pip"
 
     ```bash
-    pip install "panel-live-server[pydata]"
+    pip install "dataviz-mcp[pydata]"
     ```
 
 ```bash
@@ -195,5 +195,5 @@ automatically externalized via Jupyter Server Proxy when needed.
 | [**Tutorial: MCP Server**](tutorials/mcp-server.md) | Let an AI assistant create visualizations for you |
 | [**How-to: Configure**](how-to/configure-server.md) | Custom ports, database path, MCP transport, Jupyter proxy |
 | [**Explanation**](explanation/architecture.md) | Architecture, execution methods, design principles |
-| [**Reference**](reference/panel_live_server.md) | Full API reference |
+| [**Reference**](reference/dataviz_mcp.md) | Full API reference |
 | [**Examples**](examples.md) | Copy-paste code snippets |
