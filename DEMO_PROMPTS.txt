@@ -1,0 +1,56 @@
+Demo prompts for exercising the retry ("Refining visualization…") flow
+========================================================================
+
+All data below is randomly generated / synthetic, not real. These prompts are
+intentionally hard within the installed HoloViz-only stack (panel, hvplot,
+holoviews, bokeh, matplotlib, param, pandas, numpy, colorcet) so the first
+show() attempt is likely to hit a genuine runtime bug (not just a missing
+library), triggering the retry pill before the real chart renders.
+
+1. Animated bar-chart race
+   "Show an animated bar chart race of 8 randomly generated countries with
+   made-up GDP values that fluctuate year to year from 2000-2023, bars
+   re-sorting and sliding each year, colored by a random continent
+   assignment."
+   Why hard: sorting/ranking ties + mixed dtypes across animation frames.
+
+2. Chord diagram
+   "Build a chord diagram of random call-volume counts between 6 fictional
+   departments, with curved edges colored by source department and hoverable
+   node labels."
+   Why hard: hv.Chord needs a strict nodes-Dataset/edges-Dataset shape with
+   matching indices — easy KeyError/ValueError on the first pass.
+
+3. Streamgraph
+   "Create a streamgraph (wiggle/stacked area) of randomly generated
+   streaming-volume data for 5 made-up music genres over 10 years."
+   Why hard: hv.Area.stack() baseline computation trips on NaNs/dtype
+   mismatches.
+
+4. Hand-rolled force-directed network graph
+   "Generate a random 15-node dependency graph (random edges) and visualize
+   it as a force-directed network, computing the layout yourself (no
+   networkx), with hoverable nodes and edges."
+   Why hard: hand-coded spring physics in numpy commonly produces NaN/inf
+   coordinates or unstable/overlapping layouts.
+
+5. GitHub-style calendar heatmap
+   "Build a full-year daily-activity calendar heatmap using randomly
+   generated daily values (like a fake GitHub contribution graph), weeks as
+   columns, days as rows, with month labels."
+   Why hard: ISO week/year-boundary date arithmetic is a classic off-by-one
+   trap.
+
+6. Linked-brushing scatter matrix + reactive table
+   "Generate a random 5-column numeric dataset and build a scatter-matrix
+   where selecting points in any panel highlights them across all panels,
+   with a table below that updates live to show only the selected rows."
+   Why hard: combines hv.operation.gridmatrix + link_selections + reactive
+   Panel Tabulator — three advanced features with sharp edges.
+
+7. Live streaming dashboard with start/stop control
+   "Build a real-time dashboard with a start/stop button that streams 3
+   randomly-walking time series (updating every 200ms) with a rolling-mean
+   overlay."
+   Why hard: periodic callback + hv.streams.Buffer + toggle-driven
+   start/stop state management is a common source of stale-reference bugs.
