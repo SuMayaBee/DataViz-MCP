@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from panel_live_server.database import Snippet
-from panel_live_server.database import SnippetDatabase
+from dataviz_mcp.database import Snippet
+from dataviz_mcp.database import SnippetDatabase
 
 
 class TestSnippetDatabase:
@@ -175,7 +175,7 @@ class TestSnippetDatabase:
 
     def test_panel_method_still_enforces_extension_validation(self, temp_db):
         """Same code must raise ExtensionError for method='server'."""
-        from panel_live_server.utils import ExtensionError
+        from dataviz_mcp.utils import ExtensionError
 
         with pytest.raises(ExtensionError, match="plotly"):
             temp_db.create_visualization(

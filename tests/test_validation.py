@@ -1,12 +1,12 @@
-"""Tests for panel_live_server.validation (Layers 1–3 + formatting)."""
+"""Tests for dataviz_mcp.validation (Layers 1–3 + formatting)."""
 
 import pytest
 
-from panel_live_server.validation import SecurityError
-from panel_live_server.validation import ast_check
-from panel_live_server.validation import check_packages
-from panel_live_server.validation import ruff_check
-from panel_live_server.validation import ruff_format
+from dataviz_mcp.validation import SecurityError
+from dataviz_mcp.validation import ast_check
+from dataviz_mcp.validation import check_packages
+from dataviz_mcp.validation import ruff_check
+from dataviz_mcp.validation import ruff_format
 
 # ---------------------------------------------------------------------------
 # Layer 1: ast_check

@@ -2,7 +2,7 @@
 
 from types import SimpleNamespace
 
-import panel_live_server.app as app_module
+import dataviz_mcp.app as app_module
 
 
 def test_build_websocket_origins_local_defaults(monkeypatch):

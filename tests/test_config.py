@@ -5,16 +5,16 @@ from unittest.mock import patch
 
 import pytest
 
-from panel_live_server.config import _PORT_BASE
-from panel_live_server.config import _PORT_SPAN
-from panel_live_server.config import _resolve_external_url
-from panel_live_server.config import default_panel_port
-from panel_live_server.config import get_config
-from panel_live_server.config import reset_config
+from dataviz_mcp.config import _PORT_BASE
+from dataviz_mcp.config import _PORT_SPAN
+from dataviz_mcp.config import _resolve_external_url
+from dataviz_mcp.config import default_panel_port
+from dataviz_mcp.config import get_config
+from dataviz_mcp.config import reset_config
 
 # Env vars that must be absent by default to keep tests isolated
 _CLEAR_VARS = {
-    "PANEL_LIVE_SERVER_EXTERNAL_URL": "",
+    "DATAVIZ_MCP_EXTERNAL_URL": "",
     "JUPYTERHUB_HOST": "",
     "JUPYTERHUB_SERVICE_PREFIX": "",
     "CODESPACE_NAME": "",
@@ -39,10 +39,10 @@ class TestResolveExternalUrl:
             assert _resolve_external_url(5077) == ""
 
     def test_explicit_override_takes_priority(self) -> None:
-        """PANEL_LIVE_SERVER_EXTERNAL_URL wins over all other vars."""
+        """DATAVIZ_MCP_EXTERNAL_URL wins over all other vars."""
         env = {
             **_CLEAR_VARS,
-            "PANEL_LIVE_SERVER_EXTERNAL_URL": "https://explicit.example.com/proxy/5077",
+            "DATAVIZ_MCP_EXTERNAL_URL": "https://explicit.example.com/proxy/5077",
             "JUPYTERHUB_HOST": "https://hub.example.com",
             "JUPYTERHUB_SERVICE_PREFIX": "/user/alice/",
             "CODESPACE_NAME": "my-codespace",
@@ -51,8 +51,8 @@ class TestResolveExternalUrl:
             assert _resolve_external_url(5077) == "https://explicit.example.com/proxy/5077"
 
     def test_explicit_override_trailing_slash_stripped(self) -> None:
-        """Trailing slash is stripped from PANEL_LIVE_SERVER_EXTERNAL_URL."""
-        env = {**_CLEAR_VARS, "PANEL_LIVE_SERVER_EXTERNAL_URL": "https://explicit.example.com/proxy/5077/"}
+        """Trailing slash is stripped from DATAVIZ_MCP_EXTERNAL_URL."""
+        env = {**_CLEAR_VARS, "DATAVIZ_MCP_EXTERNAL_URL": "https://explicit.example.com/proxy/5077/"}
         with patch.dict(os.environ, env, clear=False):
             assert _resolve_external_url(5077) == "https://explicit.example.com/proxy/5077"
 
@@ -145,7 +145,7 @@ class TestGetConfigExternalUrl:
             **_CLEAR_VARS,
             "JUPYTERHUB_HOST": "https://hub.example.com",
             "JUPYTERHUB_SERVICE_PREFIX": "/user/bob/",
-            "PANEL_LIVE_SERVER_PORT": "5077",
+            "DATAVIZ_MCP_PORT": "5077",
         }
         with patch.dict(os.environ, env, clear=False):
             config = get_config()
@@ -153,7 +153,7 @@ class TestGetConfigExternalUrl:
 
     def test_get_config_empty_when_no_env(self) -> None:
         """get_config().external_url is empty string when no external env vars are set."""
-        env = {**_CLEAR_VARS, "PANEL_LIVE_SERVER_PORT": "5077"}
+        env = {**_CLEAR_VARS, "DATAVIZ_MCP_PORT": "5077"}
         with patch.dict(os.environ, env, clear=False):
             config = get_config()
             assert config.external_url == ""
@@ -163,20 +163,20 @@ class TestDefaultPanelPort:
     """Tests for the per-environment default port derivation."""
 
     def test_explicit_env_var_wins(self) -> None:
-        """An explicit PANEL_LIVE_SERVER_PORT is honored verbatim."""
-        with patch.dict(os.environ, {"PANEL_LIVE_SERVER_PORT": "6123"}, clear=False):
+        """An explicit DATAVIZ_MCP_PORT is honored verbatim."""
+        with patch.dict(os.environ, {"DATAVIZ_MCP_PORT": "6123"}, clear=False):
             assert default_panel_port() == 6123
 
     def test_derived_when_unset(self, monkeypatch) -> None:
         """Without the env var the port is derived from sys.prefix, in range."""
-        monkeypatch.delenv("PANEL_LIVE_SERVER_PORT", raising=False)
+        monkeypatch.delenv("DATAVIZ_MCP_PORT", raising=False)
         port = default_panel_port()
         assert _PORT_BASE <= port < _PORT_BASE + _PORT_SPAN
 
     def test_derived_is_deterministic_per_prefix(self, monkeypatch) -> None:
         """The derived port is stable for a given interpreter prefix."""
-        monkeypatch.delenv("PANEL_LIVE_SERVER_PORT", raising=False)
-        monkeypatch.setattr("panel_live_server.config.sys.prefix", "/envs/env-a")
+        monkeypatch.delenv("DATAVIZ_MCP_PORT", raising=False)
+        monkeypatch.setattr("dataviz_mcp.config.sys.prefix", "/envs/env-a")
         first = default_panel_port()
         assert default_panel_port() == first
         assert _PORT_BASE <= first < _PORT_BASE + _PORT_SPAN

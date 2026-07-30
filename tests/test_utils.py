@@ -5,14 +5,14 @@ import sys
 
 import pytest
 
-import panel_live_server.utils as utils_module
-from panel_live_server.utils import ExtensionError
-from panel_live_server.utils import execute_in_module
-from panel_live_server.utils import extract_last_expression
-from panel_live_server.utils import find_extensions
-from panel_live_server.utils import find_requirements
-from panel_live_server.utils import prepend_env_dll_paths
-from panel_live_server.utils import validate_extension_availability
+import dataviz_mcp.utils as utils_module
+from dataviz_mcp.utils import ExtensionError
+from dataviz_mcp.utils import execute_in_module
+from dataviz_mcp.utils import extract_last_expression
+from dataviz_mcp.utils import find_extensions
+from dataviz_mcp.utils import find_requirements
+from dataviz_mcp.utils import prepend_env_dll_paths
+from dataviz_mcp.utils import validate_extension_availability
 
 
 class TestPrependEnvDllPaths:
@@ -221,7 +221,7 @@ class TestUtils:
 
     def test_validate_code_valid(self):
         """Test validate_code with valid Python code."""
-        from panel_live_server.utils import validate_code
+        from dataviz_mcp.utils import validate_code
 
         code = "x = 1\ny = 2\nz = x + y"
         result = validate_code(code)
@@ -229,7 +229,7 @@ class TestUtils:
 
     def test_validate_code_invalid(self):
         """Test validate_code with invalid Python code."""
-        from panel_live_server.utils import validate_code
+        from dataviz_mcp.utils import validate_code
 
         code = "x = 1\ny = 2\nz = x + undefined_var"
         result = validate_code(code)
@@ -238,7 +238,7 @@ class TestUtils:
     def test_validate_code_pn_state_served_is_true(self):
         """Test that pn.state.served is True during validation so errors inside
         ``if pn.state.served:`` blocks are caught."""
-        from panel_live_server.utils import validate_code
+        from dataviz_mcp.utils import validate_code
 
         code = "import panel as pn\nif pn.state.served:\n    raise RuntimeError('served block executed')\n"
         result = validate_code(code)

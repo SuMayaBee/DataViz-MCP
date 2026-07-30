@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light dark" />
-    <title>Panel Live Server · show</title>
+    <title>DataViz MCP · show</title>
     <!-- highlight.js token colors for the code panel (issue #37), theme-gated. -->
     <link rel="stylesheet" media="(prefers-color-scheme: light)"
           href="https://unpkg.com/@highlightjs/cdn-assets@11.11.1/styles/github.min.css" />
@@ -852,7 +852,7 @@
       resizeHandle.addEventListener("pointerup", endDrag);
       resizeHandle.addEventListener("pointercancel", endDrag);
 
-      const app = new App({ name: "panel-live-server-show", version: "0.1.0" });
+      const app = new App({ name: "dataviz-mcp-show", version: "0.1.0" });
 
       app.ontoolresult = ({ content }) => {
         const textContent = content?.find((entry) => entry.type === "text");
@@ -897,7 +897,7 @@
 
           // Update tab title with visualization name if available
           if (parsedPayload.name) {
-            document.title = `Panel Live Server · ${parsedPayload.name}`;
+            document.title = `DataViz MCP · ${parsedPayload.name}`;
           }
 
           // Enable action buttons now that we have a result

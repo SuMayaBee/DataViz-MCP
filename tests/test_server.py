@@ -1,4 +1,4 @@
-"""Tests for the Panel Live Server MCP server."""
+"""Tests for the DataViz MCP MCP server."""
 
 import base64
 import gzip
@@ -9,12 +9,12 @@ from fastmcp.client import Client
 from fastmcp.exceptions import ToolError
 from typer.testing import CliRunner
 
-import panel_live_server.server as server_module
-from panel_live_server.cli import app
-from panel_live_server.server import _embed_fields
-from panel_live_server.server import mcp
-from panel_live_server.validation import SecurityError
-from panel_live_server.validation import ValidationError
+import dataviz_mcp.server as server_module
+from dataviz_mcp.cli import app
+from dataviz_mcp.server import _embed_fields
+from dataviz_mcp.server import mcp
+from dataviz_mcp.validation import SecurityError
+from dataviz_mcp.validation import ValidationError
 
 
 @pytest.mark.asyncio
@@ -299,8 +299,8 @@ def test_embed_fields_cowork_cap_falls_back_to_link():
     """
     import random
 
-    from panel_live_server.server import _COWORK_EMBED_SIZE_CAP
-    from panel_live_server.server import _EMBED_SIZE_CAP
+    from dataviz_mcp.server import _COWORK_EMBED_SIZE_CAP
+    from dataviz_mcp.server import _EMBED_SIZE_CAP
 
     # High-entropy (incompressible) body so the encoded embed lands between the
     # two caps — repetitive content would gzip away to almost nothing.

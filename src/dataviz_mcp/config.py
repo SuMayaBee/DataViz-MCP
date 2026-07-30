@@ -1,4 +1,4 @@
-"""Configuration for Panel Live Server."""
+"""Configuration for DataViz MCP."""
 
 import hashlib
 import logging
@@ -9,7 +9,7 @@ from pathlib import Path
 from pydantic import BaseModel
 from pydantic import Field
 
-logger = logging.getLogger("panel_live_server")
+logger = logging.getLogger("dataviz_mcp")
 
 # Base port and window for the per-environment default. The derived port lands
 # in [_PORT_BASE, _PORT_BASE + _PORT_SPAN), keeping it near the historical 5077
@@ -19,13 +19,13 @@ _PORT_SPAN = 1000
 
 
 def _default_user_dir() -> Path:
-    return Path(os.getenv("PANEL_LIVE_SERVER_USER_DIR", "~/.panel-live-server")).expanduser()
+    return Path(os.getenv("DATAVIZ_MCP_USER_DIR", "~/.dataviz-mcp")).expanduser()
 
 
 def default_panel_port() -> int:
     """Return the Panel server port for the active Python environment.
 
-    An explicit ``PANEL_LIVE_SERVER_PORT`` always wins. Otherwise the port is
+    An explicit ``DATAVIZ_MCP_PORT`` always wins. Otherwise the port is
     derived deterministically from the interpreter (``sys.prefix``) so that each
     environment gets its own server.
 
@@ -37,7 +37,7 @@ def default_panel_port() -> int:
     installed alongside ``pls`` shows up as missing. A per-environment port means
     different environments no longer collide on one server.
     """
-    explicit = os.getenv("PANEL_LIVE_SERVER_PORT")
+    explicit = os.getenv("DATAVIZ_MCP_PORT")
     if explicit:
         return int(explicit)
     digest = hashlib.sha256(sys.prefix.encode("utf-8")).digest()
@@ -48,14 +48,14 @@ def _resolve_external_url(port: int) -> str:
     """Resolve the external URL for the Panel server.
 
     Checks in priority order:
-    1. ``PANEL_LIVE_SERVER_EXTERNAL_URL``                          — explicit override (port-inclusive).
+    1. ``DATAVIZ_MCP_EXTERNAL_URL``                          — explicit override (port-inclusive).
     2. ``JUPYTERHUB_HOST`` + ``JUPYTERHUB_SERVICE_PREFIX``         — JupyterHub with jupyter-server-proxy.
        Note: ``JUPYTERHUB_SERVICE_PREFIX`` is set automatically by JupyterHub, but ``JUPYTERHUB_HOST`` is
        only set automatically in subdomain routing mode and must be supplied manually in path-based routing.
     3. ``CODESPACE_NAME``                                          — GitHub Codespaces port-forwarding URL.
     4. ``""``                                                      — local; callers fall back to ``http://localhost:{port}``.
     """
-    if explicit := os.getenv("PANEL_LIVE_SERVER_EXTERNAL_URL", ""):
+    if explicit := os.getenv("DATAVIZ_MCP_EXTERNAL_URL", ""):
         return explicit.rstrip("/")
 
     hub_host = os.getenv("JUPYTERHUB_HOST", "")
@@ -73,7 +73,7 @@ def _resolve_external_url(port: int) -> str:
 
 
 class Config(BaseModel):
-    """Panel Live Server configuration."""
+    """DataViz MCP configuration."""
 
     port: int = Field(default=5077, description="Port for the Panel server")
     host: str = Field(default="localhost", description="Host address for the Panel server")
@@ -87,7 +87,7 @@ class Config(BaseModel):
         description=(
             "Externally reachable base URL for the Panel server (port-inclusive). "
             "Auto-detected from JUPYTERHUB_HOST + JUPYTERHUB_SERVICE_PREFIX (JupyterHub) "
-            "or CODESPACE_NAME (GitHub Codespaces) if not set explicitly via PANEL_LIVE_SERVER_EXTERNAL_URL."
+            "or CODESPACE_NAME (GitHub Codespaces) if not set explicitly via DATAVIZ_MCP_EXTERNAL_URL."
         ),
     )
     screenshot_width: int = Field(default=1200, description="Viewport width (px) for screenshot capture")
@@ -106,14 +106,14 @@ def get_config() -> Config:
         port = default_panel_port()
         _config = Config(
             port=port,
-            host=os.getenv("PANEL_LIVE_SERVER_HOST", "localhost"),
-            max_restarts=int(os.getenv("PANEL_LIVE_SERVER_MAX_RESTARTS", "3")),
-            db_path=Path(os.getenv("PANEL_LIVE_SERVER_DB_PATH", str(_default_user_dir() / "snippets" / "snippets.db"))),
+            host=os.getenv("DATAVIZ_MCP_HOST", "localhost"),
+            max_restarts=int(os.getenv("DATAVIZ_MCP_MAX_RESTARTS", "3")),
+            db_path=Path(os.getenv("DATAVIZ_MCP_DB_PATH", str(_default_user_dir() / "snippets" / "snippets.db"))),
             external_url=_resolve_external_url(port),
-            screenshot_width=int(os.getenv("PANEL_LIVE_SERVER_SCREENSHOT_WIDTH", "1200")),
-            screenshot_height=int(os.getenv("PANEL_LIVE_SERVER_SCREENSHOT_HEIGHT", "800")),
-            screenshot_settle_ms=int(os.getenv("PANEL_LIVE_SERVER_SCREENSHOT_SETTLE_MS", "1200")),
-            screenshot_timeout_ms=int(os.getenv("PANEL_LIVE_SERVER_SCREENSHOT_TIMEOUT_MS", "30000")),
+            screenshot_width=int(os.getenv("DATAVIZ_MCP_SCREENSHOT_WIDTH", "1200")),
+            screenshot_height=int(os.getenv("DATAVIZ_MCP_SCREENSHOT_HEIGHT", "800")),
+            screenshot_settle_ms=int(os.getenv("DATAVIZ_MCP_SCREENSHOT_SETTLE_MS", "1200")),
+            screenshot_timeout_ms=int(os.getenv("DATAVIZ_MCP_SCREENSHOT_TIMEOUT_MS", "30000")),
         )
     return _config
 

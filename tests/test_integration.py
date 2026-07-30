@@ -1,4 +1,4 @@
-"""Integration tests for the Panel Live Server.
+"""Integration tests for the DataViz MCP.
 
 These tests verify the full functionality including Panel server startup,
 code execution, and visualization display.
@@ -14,9 +14,9 @@ from pathlib import Path
 
 import pytest
 
-from panel_live_server.client import DisplayClient
-from panel_live_server.config import get_config
-from panel_live_server.manager import PanelServerManager
+from dataviz_mcp.client import DisplayClient
+from dataviz_mcp.config import get_config
+from dataviz_mcp.manager import PanelServerManager
 
 
 @pytest.mark.slow

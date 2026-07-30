@@ -14,11 +14,11 @@ import panel as pn
 from bokeh.events import DocumentReady
 from bokeh.models import CustomJS
 
-from panel_live_server.database import Snippet
-from panel_live_server.database import get_db
-from panel_live_server.utils import execute_in_module
-from panel_live_server.utils import extract_last_expression
-from panel_live_server.utils import find_extensions
+from dataviz_mcp.database import Snippet
+from dataviz_mcp.database import get_db
+from dataviz_mcp.utils import execute_in_module
+from dataviz_mcp.utils import extract_last_expression
+from dataviz_mcp.utils import find_extensions
 
 logger = logging.getLogger(__name__)
 

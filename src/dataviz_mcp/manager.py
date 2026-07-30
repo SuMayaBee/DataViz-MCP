@@ -15,7 +15,7 @@ from pathlib import Path
 import psutil
 import requests  # type: ignore[import-untyped]
 
-from panel_live_server.utils import prepend_env_dll_paths
+from dataviz_mcp.utils import prepend_env_dll_paths
 
 logger = logging.getLogger(__name__)
 
@@ -75,9 +75,9 @@ class PanelServerManager:
         than from an activated shell.
         """
         env = os.environ.copy()
-        env["PANEL_LIVE_SERVER_DB_PATH"] = str(self.db_path)
-        env["PANEL_LIVE_SERVER_PORT"] = str(self.port)
-        env["PANEL_LIVE_SERVER_HOST"] = self.host
+        env["DATAVIZ_MCP_DB_PATH"] = str(self.db_path)
+        env["DATAVIZ_MCP_PORT"] = str(self.port)
+        env["DATAVIZ_MCP_HOST"] = self.host
         prepend_env_dll_paths(env)
         return env
 
@@ -148,7 +148,7 @@ class PanelServerManager:
                     f"Port {self.port} is held by a Panel server from a different Python "
                     f"environment ({other_prefix}); this one runs in {sys.prefix}. "
                     f"Snippets would execute against the wrong packages, so it will not be "
-                    f"adopted. Set PANEL_LIVE_SERVER_PORT to a free port, or stop that server."
+                    f"adopted. Set DATAVIZ_MCP_PORT to a free port, or stop that server."
                 )
                 return False
         except requests.RequestException:
@@ -220,10 +220,10 @@ class PanelServerManager:
             # Get path to app.py
             app_path = Path(__file__).parent / "app.py"
 
-            # Set up environment — use PANEL_LIVE_SERVER_* vars to match get_config()
+            # Set up environment — use DATAVIZ_MCP_* vars to match get_config()
             env = self._build_subprocess_env()
 
-            logger.info(f"Using database at: {env['PANEL_LIVE_SERVER_DB_PATH']}")
+            logger.info(f"Using database at: {env['DATAVIZ_MCP_DB_PATH']}")
 
             # Start subprocess
             logger.info(f"Starting Panel server on {self.host}:{self.port}")

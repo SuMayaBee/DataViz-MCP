@@ -15,12 +15,12 @@ from datetime import timezone
 
 from tornado.web import RequestHandler
 
-from panel_live_server.config import get_config
-from panel_live_server.database import get_db
-from panel_live_server.utils import execute_in_module
-from panel_live_server.utils import extract_last_expression
-from panel_live_server.utils import find_extensions
-from panel_live_server.validation import SecurityError
+from dataviz_mcp.config import get_config
+from dataviz_mcp.database import get_db
+from dataviz_mcp.utils import execute_in_module
+from dataviz_mcp.utils import extract_last_expression
+from dataviz_mcp.utils import find_extensions
+from dataviz_mcp.validation import SecurityError
 
 logger = logging.getLogger(__name__)
 
@@ -238,8 +238,8 @@ class ScreenshotEndpoint(RequestHandler):
 
     async def get(self):
         """Capture and return the snippet identified by ``?id=`` as a PNG."""
-        from panel_live_server.screenshot import PlaywrightUnavailableError
-        from panel_live_server.screenshot import capture_png
+        from dataviz_mcp.screenshot import PlaywrightUnavailableError
+        from dataviz_mcp.screenshot import capture_png
 
         snippet_id = self.get_argument("id", "")
         if not snippet_id:

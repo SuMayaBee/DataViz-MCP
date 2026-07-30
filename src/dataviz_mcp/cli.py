@@ -1,4 +1,4 @@
-"""CLI for Panel Live Server."""
+"""CLI for DataViz MCP."""
 
 import logging
 import os
@@ -10,13 +10,13 @@ from typing import Annotated
 # time. MCP clients that launch pls directly (not via `pixi run`) don't
 # activate the environment, so we fix it up here before any heavy imports.
 if sys.platform == "win32":
-    from panel_live_server.utils import prepend_env_dll_paths
+    from dataviz_mcp.utils import prepend_env_dll_paths
 
     prepend_env_dll_paths(os.environ)
 
 import typer
 
-from panel_live_server import __version__
+from dataviz_mcp import __version__
 
 logger = logging.getLogger(__name__)
 
@@ -24,13 +24,13 @@ logger = logging.getLogger(__name__)
 def version_callback(value: bool) -> None:
     """Print version and exit."""
     if value:
-        typer.echo(f"panel-live-server {__version__}")
+        typer.echo(f"dataviz-mcp {__version__}")
         raise typer.Exit()
 
 
 app = typer.Typer(
     name="pls",
-    help="Panel Live Server - Execute and visualize Python code snippets.",
+    help="DataViz MCP - Execute and visualize Python code snippets.",
     add_completion=False,
 )
 
@@ -46,7 +46,7 @@ def main_callback(
         typer.Option("--version", "-V", callback=version_callback, is_eager=True, help="Show version and exit."),
     ] = False,
 ) -> None:
-    """Panel Live Server - Execute and visualize Python code snippets."""
+    """DataViz MCP - Execute and visualize Python code snippets."""
     if ctx.invoked_subcommand is None:
         typer.echo(ctx.get_help())
 
@@ -58,21 +58,21 @@ def serve(
         "--port",
         "-p",
         help="Port to run the Panel server on. Defaults to a per-environment port derived from the interpreter.",
-        envvar="PANEL_LIVE_SERVER_PORT",
+        envvar="DATAVIZ_MCP_PORT",
     ),
     host: str = typer.Option(
         "localhost",
         "--host",
         "-H",
         help="Host address to bind to.",
-        envvar="PANEL_LIVE_SERVER_HOST",
+        envvar="DATAVIZ_MCP_HOST",
         show_default=True,
     ),
     db_path: str | None = typer.Option(
         None,
         "--db-path",
         help="Path to the SQLite database file.",
-        envvar="PANEL_LIVE_SERVER_DB_PATH",
+        envvar="DATAVIZ_MCP_DB_PATH",
     ),
     show: bool = typer.Option(
         False,
@@ -86,7 +86,7 @@ def serve(
         help="Enable verbose logging.",
     ),
 ) -> None:
-    """Start the Panel Live Server directly.
+    """Start the DataViz MCP directly.
 
     The server provides a web interface for executing Python code snippets
     and visualizing the results. Visit http://<host>:<port>/feed to see
@@ -94,7 +94,7 @@ def serve(
 
     Note: `pls serve` and `pls mcp` launched from the same environment resolve to
     the same per-environment default port, so a browser opened here shows the
-    visualizations the MCP server renders. Set PANEL_LIVE_SERVER_PORT (or --port)
+    visualizations the MCP server renders. Set DATAVIZ_MCP_PORT (or --port)
     to override.
     """
     import os
@@ -104,22 +104,22 @@ def serve(
     else:
         logging.basicConfig(level=logging.INFO)
 
-    from panel_live_server.config import default_panel_port
-    from panel_live_server.config import reset_config
+    from dataviz_mcp.config import default_panel_port
+    from dataviz_mcp.config import reset_config
 
     if port is None:
         port = default_panel_port()
 
     # Set env vars before config is loaded so get_config() picks them up
-    os.environ["PANEL_LIVE_SERVER_PORT"] = str(port)
-    os.environ["PANEL_LIVE_SERVER_HOST"] = host
+    os.environ["DATAVIZ_MCP_PORT"] = str(port)
+    os.environ["DATAVIZ_MCP_HOST"] = host
     if db_path:
-        os.environ["PANEL_LIVE_SERVER_DB_PATH"] = db_path
+        os.environ["DATAVIZ_MCP_DB_PATH"] = db_path
 
     # Reset the cached config singleton so it re-reads the env vars we just set
     reset_config()
 
-    from panel_live_server.app import main as app_main
+    from dataviz_mcp.app import main as app_main
 
     try:
         app_main(address=host, port=port, show=show)
@@ -134,7 +134,7 @@ def serve(
         try:
             resp = requests.get(url, timeout=2)
             if resp.status_code == 200:
-                typer.echo(f"Panel Live Server is already running at http://{host}:{port}")
+                typer.echo(f"DataViz MCP is already running at http://{host}:{port}")
                 typer.echo("  Run `pls status` for details.")
                 raise typer.Exit(0)
         except requests.ConnectionError:
@@ -151,20 +151,20 @@ def mcp(
         "--transport",
         "-t",
         help="MCP transport: stdio, http, or sse.",
-        envvar="PANEL_LIVE_SERVER_TRANSPORT",
+        envvar="DATAVIZ_MCP_TRANSPORT",
     ),
     host: str = typer.Option(
         "127.0.0.1",
         "--host",
         help="Host for HTTP/SSE transport.",
-        envvar="PANEL_LIVE_SERVER_MCP_HOST",
+        envvar="DATAVIZ_MCP_MCP_HOST",
     ),
     port: int = typer.Option(
         8001,
         "--port",
         "-p",
         help="Port for HTTP/SSE transport.",
-        envvar="PANEL_LIVE_SERVER_MCP_PORT",
+        envvar="DATAVIZ_MCP_MCP_PORT",
     ),
     verbose: bool = typer.Option(
         False,
@@ -177,7 +177,7 @@ def mcp(
 
     The MCP server exposes the `show` tool for executing and displaying
     Python visualizations. A Panel visualization server starts automatically
-    on a per-environment port (override with PANEL_LIVE_SERVER_PORT) — run
+    on a per-environment port (override with DATAVIZ_MCP_PORT) — run
     `pls status` to see the address, then visit its /feed in a browser to
     watch visualizations appear in real time.
 
@@ -189,7 +189,7 @@ def mcp(
     else:
         logging.basicConfig(level=logging.INFO)
 
-    from panel_live_server.server import mcp as mcp_server
+    from dataviz_mcp.server import mcp as mcp_server
 
     if transport == "stdio":
         mcp_server.run(transport="stdio")
@@ -209,14 +209,14 @@ def status(
         "--port",
         "-p",
         help="Port to check. Defaults to the per-environment port derived from the interpreter.",
-        envvar="PANEL_LIVE_SERVER_PORT",
+        envvar="DATAVIZ_MCP_PORT",
     ),
     host: str = typer.Option(
         "localhost",
         "--host",
         "-H",
         help="Host to check.",
-        envvar="PANEL_LIVE_SERVER_HOST",
+        envvar="DATAVIZ_MCP_HOST",
         show_default=True,
     ),
 ) -> None:
@@ -226,7 +226,7 @@ def status(
     """
     import requests
 
-    from panel_live_server.config import default_panel_port
+    from dataviz_mcp.config import default_panel_port
 
     if port is None:
         port = default_panel_port()
@@ -289,7 +289,7 @@ def install_browser() -> None:
     installing (pixi users get it via `pixi run postinstall`). It lands in the
     same environment that runs `pls`.
     """
-    from panel_live_server.screenshot import install_browser as _install_browser
+    from dataviz_mcp.screenshot import install_browser as _install_browser
 
     typer.echo("Installing Chromium for the screenshot tool (one-time)...")
     code = _install_browser()
