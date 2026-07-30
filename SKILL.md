@@ -1,14 +1,14 @@
 ---
-name: panel-live-server
-description: Show Python visualizations live in the browser with the panel-live-server MCP tools (show, screenshot). Use when those tools are available and the user asks to display, plot, chart, or visualize anything. Do not use for apps the user serves themselves with `panel serve`.
+name: dataviz-mcp
+description: Show Python visualizations live in the browser with the dataviz-mcp MCP tools (show, screenshot). Use when those tools are available and the user asks to display, plot, chart, or visualize anything. Do not use for apps the user serves themselves with `panel serve`.
 metadata:
   version: "0.0.1"
   author: holoviz
 ---
 
-# Using Panel Live Server
+# Using DataViz MCP
 
-Panel Live Server renders Python snippets as live, interactive web pages. The `show` tool takes
+DataViz MCP renders Python snippets as live, interactive web pages. The `show` tool takes
 code, executes it, and returns a URL the user opens in their browser. The `screenshot` tool hands
 you a PNG of an already-rendered snippet so you can see what the user sees.
 
@@ -271,4 +271,4 @@ For a specific Panel component, go straight to its reference page at
 `https://panel.holoviz.org/reference/{section}/{Component}.html`, where `section` is one of
 `panes`, `widgets`, `layouts`, `chat`, `global`, `indicators`, `templates`, `custom_components`.
 
-Panel Live Server itself: `https://github.com/panel-extensions/panel-live-server`
+DataViz MCP itself: `https://github.com/panel-extensions/dataviz-mcp`

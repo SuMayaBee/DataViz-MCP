@@ -1,8 +1,8 @@
-# panel-viz-mcp vs panel-live-server — Comparison
+# panel-viz-mcp vs dataviz-mcp — Comparison
 
 ## Project Overview
 
-**panel-live-server**
+**dataviz-mcp**
 - Generic code execution platform + visualization server
 - Dual interface: browser UI (`pls serve`) + MCP server (`pls mcp`)
 - Full SQLite persistence of all snippets
@@ -18,7 +18,7 @@
 
 ## Architecture Comparison
 
-| Aspect | panel-live-server | panel-viz-mcp |
+| Aspect | dataviz-mcp | panel-viz-mcp |
 |--------|-------------------|---------------|
 | Model | Generic code executor + visualization server | Curated charting service |
 | Tool count | 2 (`show`, `list_packages`) | 15 (create_viz, dashboard, streaming, multi-chart, etc.) |
@@ -33,7 +33,7 @@
 
 ## File Organization
 
-**panel-live-server** (`src/panel_live_server/`)
+**dataviz-mcp** (`src/dataviz_mcp/`)
 ```
 app.py           Panel server entry (pages + REST endpoints)
 cli.py           Typer CLI (serve/mcp/status/list)
@@ -86,7 +86,7 @@ resources/            4 HTML MCP App resources
 
 ## MCP Tools
 
-**panel-live-server** (2 tools)
+**dataviz-mcp** (2 tools)
 - `show(code, name, description, method, zoom)` — execute arbitrary Python, return viz URL
 - `list_packages()` — list installed Python packages with versions
 
@@ -111,7 +111,7 @@ resources/            4 HTML MCP App resources
 
 ## HTML Template Architecture
 
-**panel-live-server: `show.html`** (~370 lines)
+**dataviz-mcp: `show.html`** (~370 lines)
 - Generic iframe wrapper for any Panel URL
 - Toolbar: Copy URL, Copy Code, Zoom (100%/75%/50%/25%)
 - Loading spinner + 10s fallback "Open in browser" prompt if iframe is blocked
@@ -143,7 +143,7 @@ resources/            4 HTML MCP App resources
 
 ## Code Execution & Safety
 
-**panel-live-server**
+**dataviz-mcp**
 - Direct `exec()` in `types.ModuleType` namespace
 - `validate_code()`: tries to execute in isolated module, captures errors
 - `find_extensions()`: infers Panel extensions from imports
@@ -160,8 +160,8 @@ resources/            4 HTML MCP App resources
 
 ## Persistence & State
 
-**panel-live-server**
-- SQLite at `~/.panel-live-server/snippets/snippets.db`
+**dataviz-mcp**
+- SQLite at `~/.dataviz-mcp/snippets/snippets.db`
 - Full-text search virtual table (name/description/readme/app)
 - Every visualization persisted; browsable via /feed and /admin
 
@@ -172,7 +172,7 @@ resources/            4 HTML MCP App resources
 
 ---
 
-## Where panel-live-server Excels
+## Where dataviz-mcp Excels
 
 1. **Flexibility** — arbitrary Python execution works with any library
 2. **Persistence** — full SQLite archive; nothing lost between sessions
@@ -199,17 +199,17 @@ resources/            4 HTML MCP App resources
 
 ---
 
-## Improvement Opportunities for panel-live-server
+## Improvement Opportunities for dataviz-mcp
 
 Prioritized from highest to lowest impact:
 
 ### 1. "Open in Panel" button in `show.html` — HIGH VALUE, IMPLEMENTED
-panel-viz-mcp's toolbar has an "Open in Panel" button. Implemented in panel-live-server.
+panel-viz-mcp's toolbar has an "Open in Panel" button. Implemented in dataviz-mcp.
 
 **Implementation notes (hard-won):**
 - `window.open()` is **blocked** by the iframe sandbox the MCP client wraps resources in — nothing happens
 - panel-viz-mcp works around this by calling `app.callServerTool("launch_panel")` → Python `webbrowser.open(url)` server-side.
-  This is **not appropriate** for panel-live-server: the Panel server may be deployed remotely, so opening a browser on the server process would open it on the wrong machine.
+  This is **not appropriate** for dataviz-mcp: the Panel server may be deployed remotely, so opening a browser on the server process would open it on the wrong machine.
 - **Working solution**: use an `<a href target="_blank">` styled as a button. Browsers treat anchor navigation differently from script-initiated popups; `<a target="_blank">` is more likely to pass iframe sandbox rules. The `href` and `target` are set dynamically when the URL arrives; `aria-disabled="true"` (no `href`) keeps it inert before that.
 
 ### 2. Rename "Copy URL" → "Share URL" — LOW EFFORT, BETTER UX

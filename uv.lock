@@ -2257,7 +2257,7 @@ wheels = [
 ]
 
 [[package]]
-name = "panel-live-server"
+name = "dataviz-mcp"
 source = { editable = "." }
 dependencies = [
     { name = "fastmcp" },

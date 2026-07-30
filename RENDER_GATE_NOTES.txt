@@ -71,10 +71,10 @@ flag correctly gated it; 188 tests passed; no new lint.
 ================================================================================
 UNIFIED DIFF (git apply-able) — feature B as it existed before being dropped
 ================================================================================
-diff --git a/src/panel_live_server/client.py b/src/panel_live_server/client.py
+diff --git a/src/dataviz_mcp/client.py b/src/dataviz_mcp/client.py
 index 18b02e3..e2bb8fe 100644
---- a/src/panel_live_server/client.py
-+++ b/src/panel_live_server/client.py
+--- a/src/dataviz_mcp/client.py
++++ b/src/dataviz_mcp/client.py
 @@ -48,7 +48,15 @@ class DisplayClient:
          except requests.RequestException:
              return False
@@ -115,10 +115,10 @@ index 18b02e3..e2bb8fe 100644
              )
  
              response.raise_for_status()
-diff --git a/src/panel_live_server/endpoints.py b/src/panel_live_server/endpoints.py
+diff --git a/src/dataviz_mcp/endpoints.py b/src/dataviz_mcp/endpoints.py
 index 2e3e655..05eba94 100644
---- a/src/panel_live_server/endpoints.py
-+++ b/src/panel_live_server/endpoints.py
+--- a/src/dataviz_mcp/endpoints.py
++++ b/src/dataviz_mcp/endpoints.py
 @@ -62,10 +62,44 @@ def _get_external_base_url(request_host: str) -> str | None:
          return None
  
@@ -137,8 +137,8 @@ index 2e3e655..05eba94 100644
 +    ``None`` (best-effort) when Playwright is unavailable so the gate degrades
 +    gracefully to the exec-level checks.
 +    """
-+    from panel_live_server.screenshot import PlaywrightUnavailableError
-+    from panel_live_server.screenshot import probe_render
++    from dataviz_mcp.screenshot import PlaywrightUnavailableError
++    from dataviz_mcp.screenshot import probe_render
 +
 +    try:
 +        config = get_config()
@@ -187,10 +187,10 @@ index 2e3e655..05eba94 100644
              if base_url := _get_external_base_url(self.request.host):
                  url = f"{base_url}/view?id={snippet.id}"
              else:
-diff --git a/src/panel_live_server/pages/view_page.py b/src/panel_live_server/pages/view_page.py
+diff --git a/src/dataviz_mcp/pages/view_page.py b/src/dataviz_mcp/pages/view_page.py
 index 015e270..d7eac2c 100644
---- a/src/panel_live_server/pages/view_page.py
-+++ b/src/panel_live_server/pages/view_page.py
+--- a/src/dataviz_mcp/pages/view_page.py
++++ b/src/dataviz_mcp/pages/view_page.py
 @@ -4,6 +4,7 @@ This module implements the /view page endpoint that executes and displays
  a single visualization by ID.
  """
@@ -258,10 +258,10 @@ index 015e270..d7eac2c 100644
  
  
  def _execute_code(snippet: Snippet) -> pn.viewable.Viewable | None:
-diff --git a/src/panel_live_server/screenshot.py b/src/panel_live_server/screenshot.py
+diff --git a/src/dataviz_mcp/screenshot.py b/src/dataviz_mcp/screenshot.py
 index e94e943..a108b13 100644
---- a/src/panel_live_server/screenshot.py
-+++ b/src/panel_live_server/screenshot.py
+--- a/src/dataviz_mcp/screenshot.py
++++ b/src/dataviz_mcp/screenshot.py
 @@ -131,6 +131,30 @@ class _BrowserManager:
          finally:
              await context.close()
@@ -308,10 +308,10 @@ index e94e943..a108b13 100644
 +        If Playwright or a launchable browser is not available.
 +    """
 +    await _manager.probe(url, settle_ms=settle_ms, timeout_ms=timeout_ms)
-diff --git a/src/panel_live_server/server.py b/src/panel_live_server/server.py
+diff --git a/src/dataviz_mcp/server.py b/src/dataviz_mcp/server.py
 index a0a3795..8cf1ee2 100644
---- a/src/panel_live_server/server.py
-+++ b/src/panel_live_server/server.py
+--- a/src/dataviz_mcp/server.py
++++ b/src/dataviz_mcp/server.py
 @@ -661,12 +661,16 @@ async def show(
          )
  

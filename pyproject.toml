@@ -6,9 +6,9 @@ requires = [
 build-backend = "hatchling.build"
 
 [project]
-name = "panel-live-server"
+name = "dataviz-mcp"
 dynamic = ["version"]
-description = "Panel Live Server is a local Panel web server that executes Python code snippets and renders the resulting visualizations as live, interactive web pages."
+description = "DataViz MCP is a local Panel web server that executes Python code snippets and renders the resulting visualizations as live, interactive web pages."
 readme = "README.md"
 license = { text = "BSD" }
 requires-python = ">=3.12"
@@ -46,12 +46,12 @@ dependencies = [
 ]
 
 [project.scripts]
-pls = "panel_live_server.cli:main"
-panel-live-server = "panel_live_server.cli:main"
+pls = "dataviz_mcp.cli:main"
+dataviz-mcp = "dataviz_mcp.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/panel-extensions/panel-live-server"
-Source = "https://github.com/panel-extensions/panel-live-server"
+Homepage = "https://github.com/panel-extensions/dataviz-mcp"
+Source = "https://github.com/panel-extensions/dataviz-mcp"
 
 [project.optional-dependencies]
 dev = [
