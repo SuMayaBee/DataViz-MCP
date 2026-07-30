@@ -1,4 +1,4 @@
-"""Panel Live Server - MCP Server.
+"""DataViz MCP - MCP Server.
 
 A standalone MCP server that provides the `show` tool
 for executing Python code and rendering visualizations via a Panel web server.
@@ -27,20 +27,20 @@ from fastmcp.tools.tool import ToolResult
 from fastmcp.utilities.types import Image
 from mcp.types import TextContent
 
-from panel_live_server.client import DisplayClient
-from panel_live_server.config import get_config
-from panel_live_server.manager import PanelServerManager
-from panel_live_server.utils import ExtensionError
-from panel_live_server.utils import validate_extension_availability
-from panel_live_server.validation import SecurityError
-from panel_live_server.validation import ValidationError
-from panel_live_server.validation import ast_check
-from panel_live_server.validation import check_packages
-from panel_live_server.validation import ruff_check
+from dataviz_mcp.client import DisplayClient
+from dataviz_mcp.config import get_config
+from dataviz_mcp.manager import PanelServerManager
+from dataviz_mcp.utils import ExtensionError
+from dataviz_mcp.utils import validate_extension_availability
+from dataviz_mcp.validation import SecurityError
+from dataviz_mcp.validation import ValidationError
+from dataviz_mcp.validation import ast_check
+from dataviz_mcp.validation import check_packages
+from dataviz_mcp.validation import ruff_check
 
 logger = logging.getLogger(__name__)
 
-SHOW_RESOURCE_URI = "ui://panel-live-server/show.html"
+SHOW_RESOURCE_URI = "ui://dataviz-mcp/show.html"
 SHOW_TEMPLATE_PATH = Path(__file__).parent / "templates" / "show.html"
 
 # Max size of the base64-encoded, gzipped inline embed. Larger payloads are
@@ -270,11 +270,11 @@ def _cleanup():
         return
     _cleaned_up = True
     if _client:
-        logger.info("Cleaning up Panel Live Server client")
+        logger.info("Cleaning up DataViz MCP client")
         _client.close()
         _client = None
     if _manager:
-        logger.info("Stopping Panel Live Server")
+        logger.info("Stopping DataViz MCP")
         _manager.stop()
         _manager = None
 
@@ -301,23 +301,23 @@ async def app_lifespan(app):
     """MCP server lifespan - eagerly start the Panel server."""
     global _manager, _client
 
-    logger.info("Starting Panel Live Server...")
+    logger.info("Starting DataViz MCP...")
     _manager, _client = _start_panel_server()
 
     if _manager:
         atexit.register(_cleanup)
         feed_url = _externalize_url(f"http://{_manager.host}:{_manager.port}/feed")
         # Print to stderr so it's visible even in stdio MCP mode
-        print(f"\n  Panel Live Server is running.\n  Feed: {feed_url}\n", file=sys.stderr, flush=True)  # noqa: T201
-        logger.info(f"Panel Live Server started — feed: {feed_url}")
+        print(f"\n  DataViz MCP is running.\n  Feed: {feed_url}\n", file=sys.stderr, flush=True)  # noqa: T201
+        logger.info(f"DataViz MCP started — feed: {feed_url}")
     else:
-        logger.warning("Panel Live Server failed to start - show tool will not work")
+        logger.warning("DataViz MCP failed to start - show tool will not work")
 
     # Warn early if the screenshot browser is missing, so users find out now
     # rather than mid-screenshot. The check uses Playwright's sync API, so run
     # it in a worker thread to stay off the event loop.
     try:
-        from panel_live_server.screenshot import is_browser_installed
+        from dataviz_mcp.screenshot import is_browser_installed
 
         if not await asyncio.to_thread(is_browser_installed):
             msg = "The `screenshot` tool needs Chromium, which is not installed. Run `pls install-browser` to enable it."
@@ -351,9 +351,9 @@ _CLAUDE_DESKTOP_INSTRUCTIONS = (
 )
 
 mcp = FastMCP(
-    "Panel Live Server",
+    "DataViz MCP",
     instructions=(
-        "Panel Live Server executes Python code snippets and renders the resulting "
+        "DataViz MCP executes Python code snippets and renders the resulting "
         "visualizations as live, interactive web pages.\n\n"
         "WORKFLOW:\n"
         "Call `show(code, name, method)` to render a visualization.\n"
@@ -443,24 +443,24 @@ async def _ensure_client_ready(ctx: Context | None) -> None:
     global _manager, _client
 
     if not _client:
-        logger.warning("Panel Live Server client is not initialized — attempting lazy startup")
+        logger.warning("DataViz MCP client is not initialized — attempting lazy startup")
         _manager, _client = _start_panel_server()
         if _manager:
             atexit.register(_cleanup)
 
     if not _client:
         config = get_config()
-        raise ToolError(f"Panel Live Server is not running. Restart the MCP server. Ensure port {config.port} is not already in use.")
+        raise ToolError(f"DataViz MCP is not running. Restart the MCP server. Ensure port {config.port} is not already in use.")
 
     if not _client.is_healthy():
         if ctx:
-            await ctx.info("Panel Live Server is not healthy, attempting restart...")
+            await ctx.info("DataViz MCP is not healthy, attempting restart...")
         if _manager and _manager.restart():
             _client.close()
             _client = DisplayClient(base_url=_manager.get_base_url())
         else:
             config = get_config()
-            raise ToolError(f"Panel Live Server is not healthy and failed to restart. Kill any process on port {config.port} and restart the MCP server.")
+            raise ToolError(f"DataViz MCP is not healthy and failed to restart. Kill any process on port {config.port} and restart the MCP server.")
 
 
 @mcp.tool(name="show", app=AppConfig(resource_uri=SHOW_RESOURCE_URI))

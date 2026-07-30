@@ -9,8 +9,8 @@ import logging
 import panel as pn
 import panel_material_ui as pmui
 
-from panel_live_server.database import get_db
-from panel_live_server.utils import get_relative_view_url
+from dataviz_mcp.database import get_db
+from dataviz_mcp.utils import get_relative_view_url
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +33,7 @@ This page allows you to create new visualizations by writing Python code.
 ### Learn More
 
 For more information about this project, visit:
-[Panel Live Server](https://github.com/panel-extensions/panel-live-server).
+[DataViz MCP](https://github.com/panel-extensions/dataviz-mcp).
 """
 
 DEFAULT_SNIPPET = """\
@@ -173,11 +173,11 @@ def add_page():
     github_button = pmui.IconButton(
         label="Github",
         icon="star",
-        description="Give Panel Live Server a star on GitHub",
+        description="Give DataViz MCP a star on GitHub",
         sizing_mode="fixed",
         color="light",
         margin=(10, 0),
-        href="https://github.com/panel-extensions/panel-live-server",
+        href="https://github.com/panel-extensions/dataviz-mcp",
         target="_blank",
     )
 

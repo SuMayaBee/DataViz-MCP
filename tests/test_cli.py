@@ -1,8 +1,8 @@
-"""Tests for the Panel Live Server CLI."""
+"""Tests for the DataViz MCP CLI."""
 
 from typer.testing import CliRunner
 
-from panel_live_server.cli import app
+from dataviz_mcp.cli import app
 
 runner = CliRunner()
 
@@ -11,7 +11,7 @@ def test_help():
     """Test that --help works."""
     result = runner.invoke(app, ["--help"])
     assert result.exit_code == 0
-    assert "Panel Live Server" in result.output
+    assert "DataViz MCP" in result.output
 
 
 def test_serve_help():

@@ -1,4 +1,4 @@
-"""Test configuration for panel-live-server."""
+"""Test configuration for dataviz-mcp."""
 
 import pytest
 

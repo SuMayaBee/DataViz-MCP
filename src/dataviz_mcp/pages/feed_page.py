@@ -7,13 +7,13 @@ in a feed-style layout with live updates.
 import panel as pn
 import panel_material_ui as pmui
 
-from panel_live_server.database import get_db
-from panel_live_server.utils import get_relative_view_url
+from dataviz_mcp.database import get_db
+from dataviz_mcp.utils import get_relative_view_url
 
 ABOUT = """
 ## Visualization Feed
 
-This page displays a live feed of recent visualizations created through the Panel Live Server display tool.
+This page displays a live feed of recent visualizations created through the DataViz MCP display tool.
 
 ### Features
 
@@ -30,7 +30,7 @@ Each entry includes the visualization name, creation time, description, and an i
 ### Learn More
 
 For more information about this project, including setup instructions and advanced configuration options,
-visit: [Panel Live Server](https://github.com/panel-extensions/panel-live-server).
+visit: [DataViz MCP](https://github.com/panel-extensions/dataviz-mcp).
 """
 
 
@@ -182,11 +182,11 @@ def feed_page():
     github_button = pmui.IconButton(
         label="Github",
         icon="star",
-        description="Give Panel Live Server a star on GitHub",
+        description="Give DataViz MCP a star on GitHub",
         sizing_mode="fixed",
         color="light",
         margin=(10, 0),
-        href="https://github.com/panel-extensions/panel-live-server",
+        href="https://github.com/panel-extensions/dataviz-mcp",
         target="_blank",
     )
 

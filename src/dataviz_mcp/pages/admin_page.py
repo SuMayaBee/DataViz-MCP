@@ -9,8 +9,8 @@ import panel as pn
 import panel_material_ui as pmui
 from bokeh.models.widgets.tables import HTMLTemplateFormatter
 
-from panel_live_server.database import get_db
-from panel_live_server.utils import get_relative_view_url
+from dataviz_mcp.database import get_db
+from dataviz_mcp.utils import get_relative_view_url
 
 ABOUT = """
 ## Snippet Manager
@@ -28,7 +28,7 @@ stored in the database.
 ### Learn More
 
 For more information about this project, visit:
-[Panel Live Server](https://github.com/panel-extensions/panel-live-server).
+[DataViz MCP](https://github.com/panel-extensions/dataviz-mcp).
 """
 
 
@@ -139,11 +139,11 @@ def admin_page():
     github_button = pmui.IconButton(
         label="Github",
         icon="star",
-        description="Give Panel Live Server a star on GitHub",
+        description="Give DataViz MCP a star on GitHub",
         sizing_mode="fixed",
         color="light",
         margin=(10, 0),
-        href="https://github.com/panel-extensions/panel-live-server",
+        href="https://github.com/panel-extensions/dataviz-mcp",
         target="_blank",
     )
 

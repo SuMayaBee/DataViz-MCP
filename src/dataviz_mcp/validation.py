@@ -1,4 +1,4 @@
-"""Code validation pipeline for panel-live-server.
+"""Code validation pipeline for dataviz-mcp.
 
 Provides four static validation layers that run before code is stored:
 

@@ -8,10 +8,10 @@ import pytest
 from tornado.testing import AsyncHTTPTestCase
 from tornado.web import Application
 
-import panel_live_server.endpoints as endpoints_module
-from panel_live_server.endpoints import HealthEndpoint
-from panel_live_server.endpoints import SnippetEndpoint
-from panel_live_server.endpoints import _has_python_callbacks
+import dataviz_mcp.endpoints as endpoints_module
+from dataviz_mcp.endpoints import HealthEndpoint
+from dataviz_mcp.endpoints import SnippetEndpoint
+from dataviz_mcp.endpoints import _has_python_callbacks
 
 
 class _FakeDB:

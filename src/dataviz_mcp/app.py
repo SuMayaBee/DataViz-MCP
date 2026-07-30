@@ -7,11 +7,11 @@ and displays the results through various endpoints.
 import logging
 from urllib.parse import urlparse
 
-from panel_live_server.config import get_config
-from panel_live_server.endpoints import EmbedEndpoint
-from panel_live_server.endpoints import HealthEndpoint
-from panel_live_server.endpoints import ScreenshotEndpoint
-from panel_live_server.endpoints import SnippetEndpoint
+from dataviz_mcp.config import get_config
+from dataviz_mcp.endpoints import EmbedEndpoint
+from dataviz_mcp.endpoints import HealthEndpoint
+from dataviz_mcp.endpoints import ScreenshotEndpoint
+from dataviz_mcp.endpoints import SnippetEndpoint
 
 logger = logging.getLogger(__name__)
 
@@ -65,11 +65,11 @@ def main(address: str = "localhost", port: int = 5077, show: bool = True) -> Non
     """Start the Panel server."""
     import panel as pn
 
-    from panel_live_server.database import get_db
-    from panel_live_server.pages import add_page
-    from panel_live_server.pages import admin_page
-    from panel_live_server.pages import feed_page
-    from panel_live_server.pages import view_page
+    from dataviz_mcp.database import get_db
+    from dataviz_mcp.pages import add_page
+    from dataviz_mcp.pages import admin_page
+    from dataviz_mcp.pages import feed_page
+    from dataviz_mcp.pages import view_page
 
     # Initialize the database
     _ = get_db()
@@ -98,7 +98,7 @@ def main(address: str = "localhost", port: int = 5077, show: bool = True) -> Non
     ]
 
     # Log startup information
-    logger.info(f"Starting Panel Live Server at http://{address}:{port}")
+    logger.info(f"Starting DataViz MCP at http://{address}:{port}")
     logger.info(f"  Feed:   {_display_url(address, port, 'feed')}")
     logger.info(f"  Add:    {_display_url(address, port, 'add')}")
     logger.info(f"  Admin:  {_display_url(address, port, 'admin')}")
@@ -110,7 +110,7 @@ def main(address: str = "localhost", port: int = 5077, show: bool = True) -> Non
         port=port,
         address=address,
         show=show,
-        title="Panel Live Server",
+        title="DataViz MCP",
         extra_patterns=extra_patterns,
         websocket_origin=_build_websocket_origins(address=address, port=port),
     )
@@ -118,7 +118,7 @@ def main(address: str = "localhost", port: int = 5077, show: bool = True) -> Non
 
 if __name__ == "__main__":
     # Read config from env vars when run as subprocess
-    from panel_live_server.config import reset_config
+    from dataviz_mcp.config import reset_config
 
     reset_config()
     config = get_config()

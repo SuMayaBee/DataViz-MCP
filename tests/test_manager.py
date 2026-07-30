@@ -6,9 +6,9 @@ from types import SimpleNamespace
 
 import pytest
 
-import panel_live_server.manager as manager_module
-from panel_live_server.manager import PanelServerManager
-from panel_live_server.manager import _force_kill_pid
+import dataviz_mcp.manager as manager_module
+from dataviz_mcp.manager import PanelServerManager
+from dataviz_mcp.manager import _force_kill_pid
 
 # ---------------------------------------------------------------------------
 # Shared fake-psutil helpers
@@ -107,9 +107,9 @@ def test_build_subprocess_env_prepends_environment_paths(monkeypatch, tmp_path):
 
     env = manager._build_subprocess_env()
 
-    assert env["PANEL_LIVE_SERVER_DB_PATH"] == str(db_path)
-    assert env["PANEL_LIVE_SERVER_PORT"] == "5090"
-    assert env["PANEL_LIVE_SERVER_HOST"] == "127.0.0.1"
+    assert env["DATAVIZ_MCP_DB_PATH"] == str(db_path)
+    assert env["DATAVIZ_MCP_PORT"] == "5090"
+    assert env["DATAVIZ_MCP_HOST"] == "127.0.0.1"
 
     path_entries = env["PATH"].split(os.pathsep)
     assert path_entries[:4] == [

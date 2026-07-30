@@ -22,15 +22,15 @@ from pydantic import BaseModel
 from pydantic import Field
 from pydantic import field_validator
 
-from panel_live_server.config import get_config
-from panel_live_server.utils import find_extensions
-from panel_live_server.utils import find_requirements
-from panel_live_server.utils import validate_code
-from panel_live_server.utils import validate_extension_availability
-from panel_live_server.validation import ast_check
-from panel_live_server.validation import check_packages
-from panel_live_server.validation import ruff_check
-from panel_live_server.validation import ruff_format
+from dataviz_mcp.config import get_config
+from dataviz_mcp.utils import find_extensions
+from dataviz_mcp.utils import find_requirements
+from dataviz_mcp.utils import validate_code
+from dataviz_mcp.utils import validate_extension_availability
+from dataviz_mcp.validation import ast_check
+from dataviz_mcp.validation import check_packages
+from dataviz_mcp.validation import ruff_check
+from dataviz_mcp.validation import ruff_format
 
 logger = logging.getLogger(__name__)
 
