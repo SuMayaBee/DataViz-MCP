@@ -1,0 +1,1041 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Panel Live Server · show</title>
+    <!-- highlight.js token colors for the code panel (issue #37), theme-gated. -->
+    <link rel="stylesheet" media="(prefers-color-scheme: light)"
+          href="https://unpkg.com/@highlightjs/cdn-assets@11.11.1/styles/github.min.css" />
+    <link rel="stylesheet" media="(prefers-color-scheme: dark)"
+          href="https://unpkg.com/@highlightjs/cdn-assets@11.11.1/styles/github-dark.min.css" />
+    <style>
+      :root {
+        color-scheme: light dark;
+      }
+
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        overflow-x: hidden;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-rows: 1fr auto auto;   /* viz, resize grip, controls footer */
+        min-height: 100vh;
+        gap: 6px;
+        padding: 8px 8px 6px;
+        box-sizing: border-box;
+      }
+
+      /* The visualization is the hero. Controls sit in a quiet footer below it,
+         separated by a hairline divider and kept understated so they recede. */
+      .toolbar {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: nowrap;
+        min-height: 30px;
+        padding-top: 6px;
+        border-top: 1px solid rgba(120, 120, 120, 0.18);
+      }
+
+      .toolbar-sep {
+        width: 1px;
+        height: 16px;
+        background: rgba(120, 120, 120, 0.25);
+        flex-shrink: 0;
+      }
+
+      .message {
+        flex: 1;
+        min-width: 0;
+        margin: 0;
+        font-size: 0.8rem;
+        opacity: 0.75;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 1;
+      }
+
+      .message.status-error {
+        color: #c0392b;
+        opacity: 1;
+        font-weight: 600;
+      }
+
+      .message.status-warning {
+        color: #b85c00;
+        opacity: 1;
+        font-weight: 600;
+      }
+
+      .message.status-error span,
+      .message.status-warning span {
+        background: rgba(192, 57, 43, 0.1);
+        border-radius: 4px;
+        padding: 1px 6px;
+      }
+
+      .message.status-warning span {
+        background: rgba(184, 92, 0, 0.1);
+      }
+
+      button, a[role="button"] {
+        border: 1px solid rgba(120, 120, 120, 0.4);
+        border-radius: 6px;
+        padding: 3px 8px;
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+        font-size: 0.78rem;
+        white-space: nowrap;
+        flex-shrink: 0;
+        text-decoration: none;
+        display: inline-block;
+        line-height: normal;
+        font-family: inherit;
+      }
+
+      button:hover, a[role="button"]:not([aria-disabled="true"]):hover {
+        background: rgba(120, 120, 120, 0.12);
+      }
+
+      button:disabled, a[role="button"][aria-disabled="true"] {
+        opacity: 0.35;
+        cursor: default;
+      }
+
+      button.copied {
+        color: #3b9a5f;
+        border-color: #3b9a5f;
+      }
+
+      button.zoom-active {
+        background: rgba(120, 120, 120, 0.18);
+        border-color: rgba(120, 120, 120, 0.7);
+      }
+
+      /* Icon action buttons — square, muted at rest, full strength on hover */
+      .icon-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        width: 30px;
+        height: 26px;
+        opacity: 0.7;
+      }
+
+      .icon-btn:not(:disabled):hover { opacity: 1; }
+
+      .icon-btn.active {
+        background: rgba(120, 120, 120, 0.18);
+        border-color: rgba(120, 120, 120, 0.7);
+        opacity: 1;
+      }
+
+      .icon-btn svg {
+        width: 15px;
+        height: 15px;
+        display: block;
+      }
+
+      /* Zoom rendered as a single compact segmented control */
+      .zoom-group {
+        display: inline-flex;
+        flex-shrink: 0;
+      }
+
+      .zoom-group button {
+        border-radius: 0;
+        border-right-width: 0;
+        padding: 3px 8px;
+        font-size: 0.74rem;
+      }
+
+      .zoom-group button:first-child {
+        border-top-left-radius: 6px;
+        border-bottom-left-radius: 6px;
+      }
+
+      .zoom-group button:last-child {
+        border-right-width: 1px;
+        border-top-right-radius: 6px;
+        border-bottom-right-radius: 6px;
+      }
+
+      .iframe-wrapper {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        min-height: 500px;
+        overflow: hidden;
+      }
+
+      /* Resizable viz (issue #25) — a grip bar between the visualization and the
+         toolbar lets the user drag the iframe taller/shorter. The grip lives in
+         its own grid row so it never overlaps the viz. Once dragged, the layout
+         switches from filling the viewport to honoring the explicit pixel height
+         set on the wrapper (the page then scrolls if it outgrows the host). */
+      .layout.resized {
+        grid-template-rows: auto auto auto;
+        min-height: 0;
+      }
+
+      .layout.resized .iframe-wrapper {
+        min-height: 0;
+      }
+
+      .resize-handle {
+        display: none;
+        align-items: center;
+        justify-content: center;
+        height: 10px;
+        cursor: ns-resize;
+        touch-action: none;
+        flex-shrink: 0;
+      }
+
+      /* Shown only when a real visualization is on screen; hidden during retry. */
+      .layout.resizable .resize-handle {
+        display: flex;
+      }
+
+      .layout.compact .resize-handle {
+        display: none;
+      }
+
+      .resize-handle::before {
+        content: "";
+        width: 46px;
+        height: 4px;
+        border-radius: 2px;
+        background: rgba(120, 120, 120, 0.4);
+        transition: background 0.15s;
+      }
+
+      .resize-handle:hover::before,
+      .resize-handle.dragging::before {
+        background: rgba(120, 120, 120, 0.8);
+      }
+
+      /* While dragging: suppress text selection and stop the iframe from
+         swallowing the pointer, so move events keep reaching the handle. */
+      body.resizing {
+        user-select: none;
+        cursor: ns-resize;
+      }
+
+      body.resizing iframe {
+        pointer-events: none;
+      }
+
+      /* Retry state: collapse the iframe area to a small strip (and drop the layout's 100vh floor) so a failed attempt reads as a quiet "working" line, not a big empty box. */
+      .layout.compact {
+        min-height: 0;
+        padding: 4px;
+      }
+
+      /* During a retry nothing is actionable (no URL, no code, zoom is meaningless), so drop the toolbar and let the single strip carry it. */
+      .layout.compact .toolbar {
+        display: none;
+      }
+
+      .iframe-wrapper.compact {
+        min-height: 0;
+        height: auto;
+      }
+
+      /* The strip now carries an expandable traceback, so the overlay joins the
+         normal flow (absolutely positioned it could never grow the wrapper) and
+         takes pointer events back so <summary> is clickable. */
+      .iframe-wrapper.compact .loading-overlay {
+        position: static;
+        align-items: stretch;
+        justify-content: flex-start;
+        padding: 0;
+        gap: 0;
+        background: rgba(128, 128, 128, 0.06);
+        border: 1px solid rgba(120, 120, 120, 0.18);
+        border-radius: 8px;
+        opacity: 1;
+        overflow: hidden;
+        pointer-events: auto;
+      }
+
+      /* Keep the text/glyph on top of the overlay background */
+      .iframe-wrapper.compact .loading-overlay > * {
+        position: relative;
+        z-index: 1;
+      }
+
+      .retry-view {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+
+      .retry-line {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 32px;
+        padding: 0 12px;
+      }
+
+      .retry-text {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .retry-trace {
+        padding: 0 12px 8px;
+        font-size: 0.78rem;
+      }
+
+      .retry-trace summary {
+        cursor: pointer;
+        opacity: 0.75;
+        padding: 2px 0;
+        user-select: none;
+      }
+
+      .retry-trace summary:hover {
+        opacity: 1;
+      }
+
+      .retry-trace pre {
+        margin: 6px 0 0;
+        padding: 8px 10px;
+        max-height: 260px;
+        overflow: auto;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-size: 0.75rem;
+        line-height: 1.45;
+        background: rgba(128, 128, 128, 0.08);
+        border: 1px solid rgba(120, 120, 120, 0.18);
+        border-radius: 6px;
+      }
+
+      /* Static mini bar-chart glyph — no animation, just a still resting mark */
+      .refine-bars {
+        display: inline-flex;
+        align-items: flex-end;
+        gap: 2.5px;
+        height: 16px;
+        flex-shrink: 0;
+      }
+
+      .refine-bars i {
+        width: 3px;
+        border-radius: 1px;
+        background: #6fc3d6;
+      }
+
+      .refine-bars i:nth-child(1) { height: 7px; }
+      .refine-bars i:nth-child(2) { height: 12px; }
+      .refine-bars i:nth-child(3) { height: 16px; }
+      .refine-bars i:nth-child(4) { height: 10px; }
+
+      iframe {
+        width: 100%;
+        height: 100%;
+        border: 1px solid rgba(120, 120, 120, 0.4);
+        border-radius: 8px;
+        background: white;
+        display: block;
+        transform-origin: top left;
+      }
+
+      /* Loading overlay */
+      .loading-overlay {
+        position: absolute;
+        inset: 0;
+        border-radius: 8px;
+        background: rgba(128, 128, 128, 0.08);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        font-size: 0.85rem;
+        opacity: 0.7;
+        pointer-events: none;
+      }
+
+      .loading-overlay.hidden { display: none; }
+
+      .loading-overlay.blocked {
+        flex-direction: column;
+        gap: 8px;
+        opacity: 1;
+        pointer-events: auto;
+        background: rgba(128, 128, 128, 0.05);
+      }
+
+      .loading-overlay.blocked .spinner { display: none; }
+
+      .spinner {
+        width: 18px;
+        height: 18px;
+        border: 2px solid rgba(120, 120, 120, 0.3);
+        border-top-color: rgba(120, 120, 120, 0.8);
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+        flex-shrink: 0;
+      }
+
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+
+      /* Error panel — shown instead of iframe when validation fails */
+      .error-panel {
+        display: none;
+        position: absolute;
+        inset: 0;
+        border: 1px solid rgba(192, 57, 43, 0.3);
+        border-radius: 8px;
+        background: rgba(192, 57, 43, 0.04);
+        padding: 24px;
+        overflow: auto;
+        box-sizing: border-box;
+      }
+
+      .error-panel .error-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #c0392b;
+      }
+
+      .error-panel .error-body {
+        font-family: "SF Mono", "Cascadia Code", "Fira Code", Consolas, monospace;
+        font-size: 0.82rem;
+        line-height: 1.5;
+        white-space: pre-wrap;
+        word-break: break-word;
+        color: inherit;
+        opacity: 0.85;
+      }
+
+      .error-panel.visible {
+        display: block;
+      }
+
+      /* Panel-server placeholder — just a centered button, no chrome */
+      .panel-placeholder {
+        display: none;
+        position: absolute;
+        inset: 0;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border: 1px solid rgba(120, 120, 120, 0.4);
+        border-radius: 8px;
+      }
+
+      .panel-placeholder.visible { display: flex; }
+
+      .panel-placeholder a[role="button"] {
+        font-size: 1rem;
+        font-weight: 700;
+        padding: 9px 24px;
+        opacity: 1;
+        background: #1a1a1a;
+        color: #fff;
+        border-color: #1a1a1a;
+      }
+
+      .panel-placeholder a[role="button"]:hover {
+        background: #333;
+        border-color: #333;
+      }
+
+      /* Code view — swaps into the same slot the visualization occupies.
+         Canvas/CanvasText are opaque and follow the host's light/dark scheme;
+         a translucent background would let the white iframe bleed through. */
+      .code-panel {
+        display: none;
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        flex-direction: column;
+        border: 1px solid rgba(120, 120, 120, 0.4);
+        border-radius: 8px;
+        background: Canvas;
+        color: CanvasText;
+        overflow: hidden;
+      }
+
+      .code-panel.visible {
+        display: flex;
+      }
+
+      .code-panel-header {
+        display: flex;
+        justify-content: flex-end;
+        gap: 6px;
+        padding: 6px;
+        flex-shrink: 0;
+        border-bottom: 1px solid rgba(120, 120, 120, 0.18);
+      }
+
+      .code-panel-body {
+        flex: 1 1 auto;
+        margin: 0;
+        padding: 16px;
+        overflow: auto;
+        box-sizing: border-box;
+        font-family: "SF Mono", "Cascadia Code", "Fira Code", Consolas, monospace;
+        font-size: 0.82rem;
+        line-height: 1.5;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      /* Python syntax highlighting for the code panel (issue #37): token colors
+         come from the theme-gated highlight.js stylesheets linked in <head>. */
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <div class="iframe-wrapper">
+        <div id="loading-overlay" class="loading-overlay hidden" role="status" aria-label="Loading">
+          <div class="spinner"></div>
+        </div>
+        <div id="error-panel" class="error-panel">
+          <div class="error-header">✗ Validation Error</div>
+          <div id="error-body" class="error-body"></div>
+        </div>
+        <div id="panel-placeholder" class="panel-placeholder">
+          <p class="placeholder-sub"></p>
+        </div>
+        <div id="code-panel" class="code-panel">
+          <div class="code-panel-header">
+            <button id="copy-code" class="icon-btn" type="button" title="Copy code" aria-label="Copy code">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            </button>
+            <button id="close-code" class="icon-btn" type="button" title="Close code view" aria-label="Close code view">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <pre id="code-panel-body" class="code-panel-body"></pre>
+        </div>
+        <iframe id="view" src="about:blank" title="show preview"></iframe>
+      </div>
+      <div id="resize-handle" class="resize-handle" role="separator" aria-orientation="horizontal"
+           aria-label="Drag to resize visualization"
+           title="Drag to resize"></div>
+      <div class="toolbar">
+        <div class="zoom-group">
+          <button id="zoom-25"  type="button">25%</button>
+          <button id="zoom-50"  type="button">50%</button>
+          <button id="zoom-75"  type="button">75%</button>
+          <button id="zoom-100" type="button" class="zoom-active">100%</button>
+        </div>
+        <div class="toolbar-sep"></div>
+        <p id="message" class="message">Awaiting tool result…</p>
+        <div class="toolbar-sep"></div>
+        <button id="view-code" class="icon-btn" type="button" title="View code" aria-label="View code" aria-expanded="false" aria-controls="code-panel" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        </button>
+        <button id="share-url" class="icon-btn" type="button" title="Share URL — copy link" aria-label="Share URL — copy link" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        </button>
+        <button id="open-browser" class="icon-btn" type="button" title="Open in new window" aria-label="Open in new window" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <script type="module">
+      import { App } from "https://unpkg.com/@modelcontextprotocol/ext-apps@1.7.2/app-with-deps";
+      import hljs from "https://unpkg.com/@highlightjs/cdn-assets@11.11.1/es/core.min.js";
+      import python from "https://unpkg.com/@highlightjs/cdn-assets@11.11.1/es/languages/python.min.js";
+      hljs.registerLanguage("python", python);
+
+      const messageEl = document.getElementById("message");
+      const iframe = document.getElementById("view");
+      const layout = document.querySelector(".layout");
+      const iframeWrapper = document.querySelector(".iframe-wrapper");
+      const resizeHandle = document.getElementById("resize-handle");
+      const loadingOverlay = document.getElementById("loading-overlay");
+      const errorPanel = document.getElementById("error-panel");
+      const errorBody = document.getElementById("error-body");
+      const panelPlaceholder = document.getElementById("panel-placeholder");
+      const codePanel = document.getElementById("code-panel");
+      const codePanelBody = document.getElementById("code-panel-body");
+      const viewCodeButton = document.getElementById("view-code");
+      const copyCodeButton = document.getElementById("copy-code");
+      const closeCodeButton = document.getElementById("close-code");
+      const shareUrlButton  = document.getElementById("share-url");
+      const openBrowserButton = document.getElementById("open-browser");
+      const zoomButtons = [
+        { btn: document.getElementById("zoom-100"), scale: 1    },
+        { btn: document.getElementById("zoom-75"),  scale: 0.75 },
+        { btn: document.getElementById("zoom-50"),  scale: 0.5  },
+        { btn: document.getElementById("zoom-25"),  scale: 0.25 },
+      ];
+
+      function applyZoom(scale) {
+        zoomButtons.forEach(({ btn, scale: s }) => btn.classList.toggle("zoom-active", s === scale));
+        if (scale === 1) {
+          iframe.style.transform = "";
+          iframe.style.width = "";
+          iframe.style.height = "";
+        } else {
+          const inv = (1 / scale * 100).toFixed(3) + "%";
+          iframe.style.transform = `scale(${scale})`;
+          iframe.style.width = inv;
+          iframe.style.height = inv;
+        }
+      }
+
+      zoomButtons.forEach(({ btn, scale }) => btn.addEventListener("click", () => applyZoom(scale)));
+
+      let currentUrl = "";
+      let currentCode = "";
+      let currentEmbedHtmlGz = "";
+      let renderToken = 0;
+      let loadTimer = null;
+
+      async function decompressGzipBase64(b64) {
+        const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+        const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));
+        return await new Response(stream).text();
+      }
+
+      function hideSpinner() {
+        clearTimeout(loadTimer);
+        loadTimer = null;
+        loadingOverlay.classList.add("hidden");
+        loadingOverlay.classList.remove("blocked");
+        loadingOverlay.innerHTML = "";
+      }
+
+      /* Build the quiet retry strip: the same one-line status as before plus,
+         when the server sent one, the error behind a collapsed <details>
+         (issue #33). The strip stays deliberately terse; the disclosure is the
+         only place the reason appears, so it is attached for any error, not
+         just multi-line tracebacks. Content is set via textContent because a
+         traceback embeds the user's own code and must never be parsed as HTML. */
+      function buildRetryView(payload) {
+        const view = document.createElement("div");
+        view.className = "retry-view";
+
+        const line = document.createElement("div");
+        line.className = "retry-line";
+
+        const bars = document.createElement("span");
+        bars.className = "refine-bars";
+        for (let i = 0; i < 4; i++) bars.appendChild(document.createElement("i"));
+        line.appendChild(bars);
+
+        const text = document.createElement("span");
+        text.className = "retry-text";
+        text.textContent = (payload && payload.message) || "Render failed";
+        line.appendChild(text);
+        view.appendChild(line);
+
+        const rawError = (payload && payload.error_message) || "";
+        if (rawError.trim()) {
+          const details = document.createElement("details");
+          details.className = "retry-trace";
+          const summary = document.createElement("summary");
+          summary.textContent = "Traceback";
+          const pre = document.createElement("pre");
+          pre.textContent = rawError;
+          details.append(summary, pre);
+          view.appendChild(details);
+        }
+        return view;
+      }
+
+      function showBlockedFallback() {
+        loadingOverlay.classList.remove("hidden");
+        loadingOverlay.classList.add("blocked");
+        loadingOverlay.innerHTML =
+          '<span style="font-size:0.85rem;opacity:0.8;text-align:center;max-width:34rem">Inline preview was blocked by the host app. Some MCP clients, including Claude Desktop, restrict iframe origins with Content Security Policy and will not embed <code>localhost</code> pages.</span>' +
+          (currentUrl
+            ? `<a href="${currentUrl}" target="_blank" rel="noopener" style="font-size:0.85rem;color:inherit;text-decoration:underline;text-underline-offset:2px">Open visualization in browser ↗</a>`
+            : "");
+      }
+
+      const RENDER_FALLBACK_MS = 4_000;
+
+      // srcdoc (embed HTML) is already fully painted once the document loads, so hide
+      // immediately. A live /view src only has its HTML shell loaded at this point —
+      // Bokeh paints the chart a moment later over the websocket — so keep the spinner
+      // up and wait for the page's "pls-view-ready" message (with a short fallback).
+      iframe.addEventListener("load", () => {
+        if (iframe.srcdoc) {
+          hideSpinner();
+        } else if (iframe.src && iframe.src !== "about:blank") {
+          clearTimeout(loadTimer);
+          loadTimer = setTimeout(hideSpinner, RENDER_FALLBACK_MS);
+        }
+      });
+
+      window.addEventListener("message", (event) => {
+        if (event.data && event.data.type === "pls-view-ready") {
+          hideSpinner();
+        }
+      });
+
+      // Fallback: if load never fires within 10s, assume the host blocked iframe
+      // embedding (commonly due to CSP restrictions on localhost origins).
+      function startLoadTimer() {
+        clearTimeout(loadTimer);
+        loadTimer = setTimeout(showBlockedFallback, 10_000);
+      }
+
+      async function copyToClipboard(text) {
+        if (navigator.clipboard) {
+          try {
+            await navigator.clipboard.writeText(text);
+            return true;
+          } catch (_) {
+            // fall through to legacy path
+          }
+        }
+        // Legacy fallback — works in VS Code webviews
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.cssText = "position:fixed;opacity:0;pointer-events:none";
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+        return ok;
+      }
+
+      const CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>';
+
+      // Preserve the button's contents (icon OR text) and restore after the flash.
+      function flashCopied(btn) {
+        if (btn.dataset.flashing) return;
+        btn.dataset.flashing = "1";
+        const original = btn.innerHTML;
+        btn.innerHTML = btn.classList.contains("icon-btn") ? CHECK_SVG : "Copied ✓";
+        btn.classList.add("copied");
+        setTimeout(() => {
+          btn.innerHTML = original;
+          btn.classList.remove("copied");
+          delete btn.dataset.flashing;
+        }, 1500);
+      }
+
+      shareUrlButton.addEventListener("click", async () => {
+        if (!currentUrl) return;
+        const ok = await copyToClipboard(currentUrl);
+        if (ok) flashCopied(shareUrlButton);
+      });
+
+      copyCodeButton.addEventListener("click", async () => {
+        const ok = await copyToClipboard(currentCode || "No code available.");
+        if (ok) flashCopied(copyCodeButton);
+      });
+
+      // --- Python syntax highlighting for the code panel (issue #37) -------
+      // The panel shows untrusted user code. highlight.js escapes the source
+      // before emitting its markup, and `ignoreIllegals` keeps it from throwing
+      // on odd input; if highlighting fails for any reason we fall back to
+      // textContent, which never interprets the source as HTML.
+      function renderCode(code) {
+        try {
+          codePanelBody.innerHTML = hljs.highlight(code, {
+            language: "python",
+            ignoreIllegals: true,
+          }).value;
+        } catch (_) {
+          codePanelBody.textContent = code;
+        }
+      }
+
+      // The live iframe is hidden with visibility (not display) while the code is
+      // up: display:none would collapse it to zero size and Bokeh would repaint
+      // the plot at the wrong dimensions when the user switches back.
+      function openCodeView() {
+        if (!currentCode) return;
+        renderCode(currentCode);
+        codePanel.classList.add("visible");
+        viewCodeButton.classList.add("active");
+        viewCodeButton.setAttribute("aria-expanded", "true");
+        iframe.style.visibility = "hidden";
+      }
+
+      function closeCodeView() {
+        codePanel.classList.remove("visible");
+        viewCodeButton.classList.remove("active");
+        viewCodeButton.setAttribute("aria-expanded", "false");
+        iframe.style.visibility = "";
+      }
+
+      viewCodeButton.addEventListener("click", () => {
+        if (codePanel.classList.contains("visible")) {
+          closeCodeView();
+        } else {
+          openCodeView();
+        }
+      });
+
+      closeCodeButton.addEventListener("click", closeCodeView);
+
+      openBrowserButton.addEventListener("click", () => {
+        if (!currentUrl) return;
+        app.openLink({ url: currentUrl });
+      });
+
+      // --- Drag-to-resize the visualization (issue #25) --------------------
+      // A grip bar between the viz and the toolbar. Dragging sets an explicit
+      // pixel height on the wrapper (via the "resized" layout mode).
+      const MIN_VIZ_HEIGHT = 240;
+      const MAX_VIZ_HEIGHT = 4000;
+      let dragState = null;
+      let pointerY = null;   // latest cursor Y, applied once per animation frame
+      let rafId = null;
+
+      function setVizHeight(px) {
+        const h = Math.max(MIN_VIZ_HEIGHT, Math.min(MAX_VIZ_HEIGHT, px));
+        layout.classList.add("resized");
+        iframeWrapper.style.height = h + "px";
+      }
+
+      // pointermove fires many times per frame; resizing the iframe on each one
+      // forces the embedded viz to reflow/repaint and lags behind the cursor
+      // (the "shaky" drag). Coalesce them: stash the latest Y and commit a single
+      // height write per animation frame.
+      function applyPointerY() {
+        rafId = null;
+        if (!dragState || pointerY === null) return;
+        setVizHeight(dragState.startHeight + (pointerY - dragState.startY));
+      }
+
+      resizeHandle.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        dragState = {
+          startY: e.clientY,
+          startHeight: iframeWrapper.getBoundingClientRect().height,
+        };
+        resizeHandle.setPointerCapture(e.pointerId);
+        resizeHandle.classList.add("dragging");
+        document.body.classList.add("resizing");
+      });
+
+      resizeHandle.addEventListener("pointermove", (e) => {
+        if (!dragState) return;
+        pointerY = e.clientY;
+        if (rafId === null) rafId = requestAnimationFrame(applyPointerY);
+      });
+
+      function endDrag(e) {
+        if (!dragState) return;
+        dragState = null;
+        pointerY = null;
+        if (rafId !== null) {
+          cancelAnimationFrame(rafId);
+          rafId = null;
+        }
+        resizeHandle.classList.remove("dragging");
+        document.body.classList.remove("resizing");
+        try { resizeHandle.releasePointerCapture(e.pointerId); } catch (_) {}
+      }
+
+      resizeHandle.addEventListener("pointerup", endDrag);
+      resizeHandle.addEventListener("pointercancel", endDrag);
+
+      const app = new App({ name: "panel-live-server-show", version: "0.1.0" });
+
+      app.ontoolresult = ({ content }) => {
+        const textContent = content?.find((entry) => entry.type === "text");
+        const rawText = textContent?.text ?? "No tool text payload received.";
+
+        let parsedPayload = null;
+        try {
+          parsedPayload = JSON.parse(rawText);
+          // FastMCP (>=3) wraps plain string returns in an output-schema
+          // envelope: {"result": "<json string>"}. Unwrap it so url/status/code
+          // are read from the actual payload rather than the envelope.
+          if (
+            parsedPayload &&
+            typeof parsedPayload === "object" &&
+            typeof parsedPayload.result === "string" &&
+            parsedPayload.url === undefined
+          ) {
+            try {
+              parsedPayload = JSON.parse(parsedPayload.result);
+            } catch {
+              /* leave parsedPayload as the envelope if inner parse fails */
+            }
+          }
+        } catch {
+          parsedPayload = null;
+        }
+
+        // Reset status classes
+        messageEl.className = "message";
+
+        if (parsedPayload && typeof parsedPayload === "object") {
+          const status = parsedPayload.status || "success";
+          const statusPrefix = status === "error" ? "✗ " : status === "warning" ? "⚠ " : "";
+          const baseMessage = statusPrefix + (parsedPayload.message || "Tool result received.");
+          const extraError = parsedPayload.error_message ? `\n\n${parsedPayload.error_message}` : "";
+          const recovery = parsedPayload.recovery ? `\n\n${parsedPayload.recovery}` : "";
+
+          messageEl.classList.add(`status-${status}`);
+          currentUrl = typeof parsedPayload.url === "string" ? parsedPayload.url : "";
+          currentCode = typeof parsedPayload.code === "string" ? parsedPayload.code : "";
+          currentEmbedHtmlGz = typeof parsedPayload.embed_html_gz === "string" ? parsedPayload.embed_html_gz : "";
+
+          // Update tab title with visualization name if available
+          if (parsedPayload.name) {
+            document.title = `Panel Live Server · ${parsedPayload.name}`;
+          }
+
+          // Enable action buttons now that we have a result
+          viewCodeButton.disabled = !currentCode;
+          shareUrlButton.disabled = !currentUrl;
+          openBrowserButton.disabled = !currentUrl;
+
+          // Apply zoom from payload
+          const zoomVal = parsedPayload.zoom;
+          if (zoomVal && zoomVal !== 100) {
+            const scale = zoomVal / 100;
+            const entry = zoomButtons.find(z => Math.abs(z.scale - scale) < 0.01);
+            if (entry) applyZoom(entry.scale);
+          }
+
+          const fullText = `${baseMessage}${extraError}${recovery}`;
+          // Show short label in toolbar; full detail on hover
+          // Wrap in span so tinted background hugs the text, not the full flex width
+          messageEl.innerHTML = `<span>${baseMessage}</span>`;
+          messageEl.title = fullText;
+        } else {
+          messageEl.textContent = rawText;
+          messageEl.title = rawText;
+          const urlRegex = /(https?:\/\/[^\s)]+)/i;
+          const match = rawText.match(urlRegex);
+          currentUrl = match ? match[1] : "";
+          currentCode = "";
+          currentEmbedHtmlGz = "";
+        }
+
+        const isPanelServer = parsedPayload && parsedPayload.panel_server === true;
+
+        // Reset all panels
+        errorPanel.classList.remove("visible");
+        panelPlaceholder.classList.remove("visible");
+        closeCodeView();
+        iframeWrapper.classList.remove("compact");
+        layout.classList.remove("compact");
+        // Each new tool result starts fresh: drop any custom height and hide the
+        // grip until we confirm a real visualization is being shown below.
+        layout.classList.remove("resized", "resizable");
+        iframeWrapper.style.height = "";
+        zoomButtons.forEach(({ btn }) => btn.style.display = "");
+
+        if (currentEmbedHtmlGz) {
+          layout.classList.add("resizable");
+          loadingOverlay.classList.remove("hidden");
+          loadingOverlay.innerHTML =
+            '<div class="spinner"></div><span>Decompressing visualization…</span>';
+          const token = ++renderToken;
+          decompressGzipBase64(currentEmbedHtmlGz)
+            .then((html) => {
+              if (token !== renderToken) return;
+              loadingOverlay.innerHTML =
+                '<div class="spinner"></div><span>Rendering visualization…</span>';
+              iframe.srcdoc = html;
+            })
+            .catch((err) => {
+              if (token !== renderToken) return;
+              hideSpinner();
+              iframe.removeAttribute("srcdoc");
+              iframe.src = "about:blank";
+              iframe.style.display = "none";
+              errorPanel.querySelector(".error-header").textContent = "✗ Decompression Error";
+              errorBody.textContent = `Failed to decompress inline visualization: ${err?.message || err}`;
+              errorPanel.classList.add("visible");
+            });
+        } else if (isPanelServer) {
+          hideSpinner();
+          iframe.removeAttribute("srcdoc");
+          iframe.src = "about:blank";
+          iframe.style.display = "none";
+          zoomButtons.forEach(({ btn }) => btn.style.display = "none");
+          if (currentUrl) {
+            const btn = document.createElement("a");
+            btn.href = currentUrl;
+            btn.role = "button";
+            btn.textContent = "Open in browser ↗";
+            btn.addEventListener("click", (e) => {
+              e.preventDefault();
+              app.openLink({ url: currentUrl });
+            });
+            panelPlaceholder.querySelector(".placeholder-sub").replaceChildren(btn);
+          }
+          panelPlaceholder.classList.add("visible");
+        } else if (currentUrl) {
+          layout.classList.add("resizable");
+          iframe.style.display = "";
+          loadingOverlay.classList.remove("hidden");
+          loadingOverlay.innerHTML = '<div class="spinner"></div>';
+          iframe.removeAttribute("srcdoc");
+          iframe.src = currentUrl;
+          startLoadTimer();
+        } else if (parsedPayload && (parsedPayload.status === "retrying" || parsedPayload.status === "pending")) {
+          // A show() attempt did not render yet — collapse to a small strip and show a quiet working line (never a red error box) while the model refines and retries.
+          iframe.removeAttribute("srcdoc");
+          iframe.src = "about:blank";
+          iframe.style.display = "none";
+          errorPanel.classList.remove("visible");
+          iframeWrapper.classList.add("compact");
+          layout.classList.add("compact");
+          zoomButtons.forEach(({ btn }) => btn.style.display = "none");
+          clearTimeout(loadTimer);
+          loadTimer = null;
+          loadingOverlay.classList.remove("hidden");
+          loadingOverlay.classList.remove("blocked");
+          loadingOverlay.replaceChildren(buildRetryView(parsedPayload));
+        } else {
+          hideSpinner();
+          iframe.src = "about:blank";
+          iframe.style.display = "none";
+
+          // Determine error text from parsed payload or raw text
+          const errorText = (parsedPayload && parsedPayload.status === "error")
+            ? (parsedPayload.error_message || parsedPayload.message || rawText)
+            : rawText;
+
+          // Classify the error for the header
+          const lower = errorText.toLowerCase();
+          const headerText = lower.includes("security") || lower.includes("blocked")
+            ? "✗ Security Error"
+            : lower.includes("syntax")
+              ? "✗ Syntax Error"
+              : lower.includes("package")
+                ? "✗ Package Error"
+                : lower.includes("extension")
+                  ? "✗ Extension Error"
+                  : lower.includes("runtime")
+                    ? "✗ Runtime Error"
+                    : "✗ Validation Error";
+
+          errorPanel.querySelector(".error-header").textContent = headerText;
+          errorBody.textContent = errorText;
+          errorPanel.classList.add("visible");
+        }
+      };
+
+      await app.connect();
+    </script>
+  </body>
+</html>
