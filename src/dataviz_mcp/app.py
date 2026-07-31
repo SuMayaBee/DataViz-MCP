@@ -8,7 +8,6 @@ import logging
 from urllib.parse import urlparse
 
 from dataviz_mcp.config import get_config
-from dataviz_mcp.endpoints import EmbedEndpoint
 from dataviz_mcp.endpoints import HealthEndpoint
 from dataviz_mcp.endpoints import ScreenshotEndpoint
 from dataviz_mcp.endpoints import SnippetEndpoint
@@ -92,7 +91,6 @@ def main(address: str = "localhost", port: int = 5077, show: bool = True) -> Non
     # Configure extra patterns for Tornado handlers (REST API endpoints)
     extra_patterns = [
         (r"/api/snippet", SnippetEndpoint),
-        (r"/api/embed", EmbedEndpoint),
         (r"/api/screenshot", ScreenshotEndpoint),
         (r"/api/health", HealthEndpoint),
     ]
