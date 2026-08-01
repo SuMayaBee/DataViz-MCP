@@ -1,6 +1,6 @@
 # ✨ dataviz-mcp
 
-[![CI](https://img.shields.io/github/actions/workflow/status/panel-extensions/dataviz-mcp/ci.yml?style=flat-square&branch=main)](https://github.com/panel-extensions/dataviz-mcp/actions/workflows/ci.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/SuMayaBee/DataViz-MCP/ci.yml?style=flat-square&branch=main)](https://github.com/SuMayaBee/DataViz-MCP/actions/workflows/ci.yml)
 [![conda-forge](https://img.shields.io/conda/vn/conda-forge/dataviz-mcp?logoColor=white&logo=conda-forge&style=flat-square)](https://prefix.dev/channels/conda-forge/packages/dataviz-mcp)
 [![pypi-version](https://img.shields.io/pypi/v/dataviz-mcp.svg?logo=pypi&logoColor=white&style=flat-square)](https://pypi.org/project/dataviz-mcp)
 [![python-version](https://img.shields.io/pypi/pyversions/dataviz-mcp?logoColor=white&logo=python&style=flat-square)](https://pypi.org/project/dataviz-mcp)
@@ -9,9 +9,9 @@ DataViz MCP is a local Panel web server and MCP server that executes Python code
 and renders the resulting visualizations as live, interactive web pages — enabling humans and AI
 assistants to display and inspect Python outputs in real time.
 
-![dataviz-mcp showcase](https://raw.githubusercontent.com/panel-extensions/dataviz-mcp/main/docs/assets/gif/dataviz-mcp-showcase.gif)
+![dataviz-mcp showcase](https://raw.githubusercontent.com/SuMayaBee/DataViz-MCP/main/docs/assets/gif/dataviz-mcp-showcase.gif)
 
-![dataviz-mcp MCP showcase](https://raw.githubusercontent.com/panel-extensions/dataviz-mcp/main/docs/assets/gif/dataviz-mcp-showcase-mcp.gif)
+![dataviz-mcp MCP showcase](https://raw.githubusercontent.com/SuMayaBee/DataViz-MCP/main/docs/assets/gif/dataviz-mcp-showcase-mcp.gif)
 
 ## Features
 
@@ -25,7 +25,7 @@ assistants to display and inspect Python outputs in real time.
 
 ## Installation
 
-Install via uv, pip, or pixi — see the [Installation guide](https://panel-extensions.github.io/dataviz-mcp/tutorials/installation/) for full instructions including how to find your `pls` path.
+Install via uv, pip, or pixi — see the [Installation guide](https://SuMayaBee.github.io/DataViz-MCP/tutorials/installation/) for full instructions including how to find your `pls` path.
 
 ```bash
 uv tool install "dataviz-mcp[pydata]"
@@ -37,7 +37,7 @@ uv tool install "dataviz-mcp[pydata]"
 ## Connect to your AI assistant
 
 Use the **absolute path** printed by `which pls` above — not just `pls`.
-Full setup instructions for each client: [docs → Connect to your MCP client](https://panel-extensions.github.io/dataviz-mcp/tutorials/installation/#connect-to-your-mcp-client)
+Full setup instructions for each client: [docs → Connect to your MCP client](https://SuMayaBee.github.io/DataViz-MCP/tutorials/installation/#connect-to-your-mcp-client)
 
 | Client | Config location |
 |---|---|
@@ -45,7 +45,7 @@ Full setup instructions for each client: [docs → Connect to your MCP client](h
 | **Cursor** | `~/.cursor/mcp.json` |
 | **Claude Desktop** | `claude_desktop_config.json` |
 | **Claude Code** | `claude mcp add dataviz-mcp -- /path/to/pls mcp` |
-| **claude.ai** | HTTP transport + tunnel — see [docs](https://panel-extensions.github.io/dataviz-mcp/tutorials/installation/#connect-to-your-mcp-client) |
+| **claude.ai** | HTTP transport + tunnel — see [docs](https://SuMayaBee.github.io/DataViz-MCP/tutorials/installation/#connect-to-your-mcp-client) |
 
 ## Usage
 
@@ -72,7 +72,7 @@ You can also use `dataviz-mcp` but `pls` is shorter and easier to remember.
 
 ## Development
 
-See the [Contributing guide](https://panel-extensions.github.io/dataviz-mcp/tutorials/contributing/) for the full setup (fork, install, connect to MCP client, run tests).
+See the [Contributing guide](https://SuMayaBee.github.io/DataViz-MCP/tutorials/contributing/) for the full setup (fork, install, connect to MCP client, run tests).
 
 ## ❤️ Contributing
 

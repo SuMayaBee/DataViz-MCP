@@ -1,9 +1,9 @@
 [project]
 site_name = "dataviz-mcp"
 site_description = "DataViz MCP is a local Panel web server that executes Python code snippets and renders the resulting visualizations as live, interactive web pages, enabling humans and AI assistants to display and inspect Python outputs in real time."
-site_author = "MarcSkovMadsen"
-repo_url = "https://github.com/panel-extensions/dataviz-mcp"
-repo_name = "panel-extensions/dataviz-mcp"
+site_author = "Sumaiya Islam"
+repo_url = "https://github.com/SuMayaBee/DataViz-MCP"
+repo_name = "SuMayaBee/DataViz-MCP"
 edit_uri = "edit/main/docs/"
 nav = [
   {"Home" = "index.md"},

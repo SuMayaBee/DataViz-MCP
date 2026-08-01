@@ -12,9 +12,9 @@ description = "DataViz MCP is a local Panel web server that executes Python code
 readme = "README.md"
 license = { text = "BSD" }
 requires-python = ">=3.12"
-authors = [{ name = "MarcSkovMadsen", email = "marc.skov.madsen@gmail.com" }]
+authors = [{ name = "Sumaiya Islam", email = "sumaiya.0fficial369@gmail.com" }]
 maintainers = [
-    { name = "MarcSkovMadsen", email = "marc.skov.madsen@gmail.com" },
+    { name = "Sumaiya Islam", email = "sumaiya.0fficial369@gmail.com" },
 ]
 classifiers = [
     "License :: OSI Approved :: BSD License",
@@ -50,8 +50,8 @@ pls = "dataviz_mcp.cli:main"
 dataviz-mcp = "dataviz_mcp.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/panel-extensions/dataviz-mcp"
-Source = "https://github.com/panel-extensions/dataviz-mcp"
+Homepage = "https://github.com/SuMayaBee/DataViz-MCP"
+Source = "https://github.com/SuMayaBee/DataViz-MCP"
 
 [project.optional-dependencies]
 dev = [

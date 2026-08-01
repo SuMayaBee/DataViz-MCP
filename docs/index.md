@@ -1,6 +1,6 @@
 # dataviz-mcp
 
-[![CI](https://img.shields.io/github/actions/workflow/status/panel-extensions/dataviz-mcp/ci.yml?style=flat-square&branch=main)](https://github.com/panel-extensions/dataviz-mcp/actions/workflows/ci.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/SuMayaBee/DataViz-MCP/ci.yml?style=flat-square&branch=main)](https://github.com/SuMayaBee/DataViz-MCP/actions/workflows/ci.yml)
 [![conda-forge](https://img.shields.io/conda/vn/conda-forge/dataviz-mcp?logoColor=white&logo=conda-forge&style=flat-square)](https://prefix.dev/channels/conda-forge/packages/dataviz-mcp)
 [![pypi](https://img.shields.io/pypi/v/dataviz-mcp.svg?logo=pypi&logoColor=white&style=flat-square)](https://pypi.org/project/dataviz-mcp)
 [![python](https://img.shields.io/pypi/pyversions/dataviz-mcp?logoColor=white&logo=python&style=flat-square)](https://pypi.org/project/dataviz-mcp)
