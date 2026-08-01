@@ -1,0 +1,423 @@
+# Tutorial: Installation
+
+In this tutorial you'll install DataViz MCP so that the `pls` command is available in your
+terminal. By the end, `pls --version` will print the installed version.
+
+## What You'll Need
+
+- Python 3.12 or later
+- A package manager: [`pixi`](https://pixi.sh), [`uv`](https://docs.astral.sh/uv/), or `pip` (built into Python)
+
+---
+
+## Install DataViz MCP
+
+=== "pixi"
+
+    Initialize a project:
+
+    ```bash
+    pixi init
+    pixi add python
+    ```
+
+    Install:
+
+    ```bash
+    pixi add --pypi "dataviz-mcp[pydata]"
+    ```
+
+    Install the browser the `screenshot` tool needs:
+
+    ```bash
+    pixi run pls install-browser
+    ```
+
+    Find the `pls` path:
+
+    **macOS / Linux:**
+
+    ```bash
+    pixi run which pls
+    # typically: /path/to/project/.pixi/envs/default/bin/pls
+    ```
+
+    **Windows:**
+
+    ```powershell
+    pixi run where.exe pls
+    # typically: .pixi\envs\default\Library\bin\pls.exe
+    ```
+
+=== "uv"
+
+    Install:
+
+    ```bash
+    uv tool install "dataviz-mcp[pydata]"
+    ```
+
+    Install the browser the `screenshot` tool needs:
+
+    ```bash
+    pls install-browser
+    ```
+
+    Find the `pls` path:
+
+    **macOS / Linux:**
+
+    ```bash
+    which pls
+    # typically: /home/<user>/.local/bin/pls
+    ```
+
+    **Windows:**
+
+    ```powershell
+    where.exe pls
+    # typically: %USERPROFILE%\.local\bin\pls.exe
+    ```
+
+=== "pip"
+
+    Create and activate a virtual environment.
+
+    **macOS / Linux:**
+
+    ```bash
+    python -m venv venv
+    source venv/bin/activate
+    ```
+
+    **Windows (PowerShell):**
+
+    ```powershell
+    python -m venv venv
+    venv\Scripts\Activate.ps1
+    ```
+
+    **Windows (Command Prompt):**
+
+    ```bat
+    python -m venv venv
+    venv\Scripts\activate.bat
+    ```
+
+    Install:
+
+    ```bash
+    pip install "dataviz-mcp[pydata]"
+    ```
+
+    Install the browser the `screenshot` tool needs:
+
+    ```bash
+    pls install-browser
+    ```
+
+    Find the `pls` path:
+
+    **macOS / Linux:**
+
+    ```bash
+    which pls
+    # typically: /path/to/venv/bin/pls
+    ```
+
+    **Windows:**
+
+    ```powershell
+    where.exe pls
+    # typically: .\venv\Scripts\pls.exe
+    ```
+
+The core install ships the HoloViz visualization stack — hvplot, holoviews, panel, and bokeh.
+The `[pydata]` extra adds the wider PyData ecosystem on top:
+
+> matplotlib · plotly · seaborn · altair · polars · duckdb · datashader · geoviews · plotnine · pyarrow · scikit-learn · and more
+
+!!! tip "Only need the core server?"
+    Install without extras if you only want to serve your own code and manage packages yourself:
+    ```bash
+    pixi add --pypi dataviz-mcp
+    uv tool install dataviz-mcp
+    pip install dataviz-mcp
+    ```
+
+---
+
+## Verify the installation
+
+```bash
+pls --version
+```
+
+You should see the installed version printed. If the command is not found, ensure your uv tools
+directory is on your PATH, run `uv tool update-shell` and restart your terminal.
+
+---
+
+## Connect to your MCP client
+
+=== "VS Code"
+
+    Add to `.vscode/mcp.json` (create if it doesn't exist):
+
+    ```json
+    {
+      "servers": {
+        "dataviz-mcp": {
+          "type": "stdio",
+          "command": "/path/to/pls",
+          "args": ["mcp"]
+        }
+      }
+    }
+    ```
+
+    !!! warning "Use your absolute path"
+        Replace `"command": "/path/to/pls"` with the path printed by `which pls` above,
+        e.g. `"command": "/home/user/.local/bin/pls"`
+
+=== "Cursor"
+
+    Add to `~/.cursor/mcp.json`:
+
+    ```json
+    {
+      "mcpServers": {
+        "dataviz-mcp": {
+          "command": "/path/to/pls",
+          "args": ["mcp"]
+        }
+      }
+    }
+    ```
+
+    !!! warning "Use your absolute path"
+        Replace `"command": "/path/to/pls"` with the path printed by `which pls` above,
+        e.g. `"command": "/home/user/.local/bin/pls"`
+
+    Open Cursor Settings → MCP and verify the green dot. Use Agent mode in chat.
+
+=== "Claude Desktop"
+
+    Edit the config file for your OS:
+
+    - **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+    - **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+    - **Linux:** `~/.config/Claude/claude_desktop_config.json`
+
+    ```json
+    {
+      "mcpServers": {
+        "dataviz-mcp": {
+          "command": "/path/to/pls",
+          "args": ["mcp"]
+        }
+      }
+    }
+    ```
+
+    !!! warning "Use your absolute path"
+        Replace `"command": "/path/to/pls"` with the path printed by `which pls` above,
+        e.g. `"command": "/home/user/.local/bin/pls"`
+
+    Restart Claude Desktop.
+
+    !!! note "Enable the connector in Cowork"
+        To use the `show` tool from Cowork, open **Customize → Connectors →
+        dataviz-mcp** and set its permission to **Always Allow** (runs
+        without prompting) or **Needs approval** (asks before each call). If the
+        connector is left disabled, the tool won't be available in Cowork.
+
+=== "Claude Code"
+
+    ```bash
+    claude mcp add dataviz-mcp -- /path/to/pls mcp
+    ```
+
+    !!! warning "Use your absolute path"
+        Replace `/path/to/pls` with the path printed by `which pls` above,
+        e.g. `claude mcp add dataviz-mcp -- /home/user/.local/bin/pls mcp`
+
+=== "claude.ai"
+
+    claude.ai requires HTTP transport and a public URL. You can use any tunneling service
+    (ngrok, Cloudflare, localhost.run, etc.); this example uses Cloudflare.
+
+    **Terminal 1**: start the MCP server:
+
+    ```bash
+    /path/to/pls mcp --transport http --port 8001
+    ```
+
+    !!! warning "Use your absolute path"
+        Replace `/path/to/pls` with the path printed by `which pls` above,
+        e.g. `/home/user/.local/bin/pls mcp --transport http --port 8001`
+
+    **Terminal 2**: tunnel for the MCP server:
+
+    ```bash
+    cloudflared tunnel --url http://localhost:8001
+    ```
+
+    **Terminal 3**: tunnel for the Panel server:
+
+    ```bash
+    cloudflared tunnel --url http://localhost:5077
+    ```
+
+    Stop Terminal 1, then set the Panel tunnel URL.
+
+    **macOS / Linux:**
+
+    ```bash
+    export DATAVIZ_MCP_EXTERNAL_URL=<url-from-terminal-3>
+    ```
+
+    **Windows (PowerShell):**
+
+    ```powershell
+    $env:DATAVIZ_MCP_EXTERNAL_URL="<url-from-terminal-3>"
+    ```
+
+    And restart:
+
+    ```bash
+    /path/to/pls mcp --transport http --port 8001
+    ```
+
+    Then go to claude.ai → Settings → Connectors → Add custom connector and enter
+    `<url-from-terminal-2>/mcp` as the URL.
+
+Once connected, ask your AI: *"Show me a scatter plot of this data using the show tool."*
+
+---
+
+**Without an AI assistant**: use the REST API or the browser UI directly.
+
+=== "REST API"
+
+    ```python
+    import requests
+
+    r = requests.post(
+        "http://localhost:5077/api/snippet",
+        json={
+            "code": "import panel as pn\npn.widgets.IntSlider(name='x', start=0, end=100)",
+            "name": "Slider",
+            "method": "inline",
+        }
+    )
+    print(r.json()["url"])  # http://localhost:5077/view?id=...
+    ```
+
+=== "Standalone"
+
+    ```bash
+    /path/to/pls serve
+    # Open http://localhost:5077/add in your browser
+    ```
+
+---
+
+## Add packages to the server environment
+
+DataViz MCP executes your Python snippets using the packages installed *in the environment
+you installed it into*. It inherits that environment rather than defining its own, so you are free
+to add or upgrade anything you need there. To add a package:
+
+=== "pixi"
+
+    ```bash
+    pixi add --pypi my-package
+    ```
+
+    For example, to add `prophet`:
+
+    ```bash
+    pixi add --pypi prophet
+    ```
+
+    !!! note "Upgrading"
+        To upgrade to the latest version:
+        ```bash
+        pixi upgrade dataviz-mcp
+        ```
+
+=== "uv"
+
+    ```bash
+    uv tool install --with my-package "dataviz-mcp[pydata]"
+    ```
+
+    You can chain multiple `--with` flags:
+
+    ```bash
+    uv tool install --with prophet --with xgboost "dataviz-mcp[pydata]"
+    ```
+
+    !!! note "Upgrading"
+        To upgrade to the latest version:
+        ```bash
+        uv tool upgrade dataviz-mcp
+        ```
+
+=== "pip"
+
+    Activate the environment you installed `pls` into, then install as usual:
+
+    ```bash
+    pip install my-package
+    ```
+
+    For example, to add `prophet`:
+
+    ```bash
+    pip install prophet
+    ```
+
+    !!! note "Upgrading"
+        To upgrade to the latest version:
+        ```bash
+        pip install --upgrade dataviz-mcp
+        ```
+
+=== "conda"
+
+    Activate the environment you installed `pls` into, then install as usual:
+
+    ```bash
+    conda activate my-env
+    conda install my-package
+    ```
+
+    For example, to add `prophet`:
+
+    ```bash
+    conda activate my-env
+    conda install prophet
+    ```
+
+    !!! note "Upgrading"
+        To upgrade to the latest version:
+        ```bash
+        conda update dataviz-mcp
+        ```
+
+No server restart is needed, the package is available immediately the next time the server starts.
+
+---
+
+## What You've Learned
+
+- Install DataViz MCP as a uv tool with the `[pydata]` extras
+- Verify the installation with `pls --version`
+- Add extra packages to the server environment with `--with`
+
+## Next Steps
+
+- **[Use the standalone server](standalone-server.md)**: create, view, and manage visualizations
+- **[Use the MCP server](mcp-server.md)**: enable AI assistants to render visualizations in your IDE
