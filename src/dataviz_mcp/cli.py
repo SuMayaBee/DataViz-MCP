@@ -1,5 +1,6 @@
 """CLI for DataViz MCP."""
 
+import json
 import logging
 import os
 import sys
@@ -310,6 +311,22 @@ def install_browser() -> None:
             err=True,
         )
         raise typer.Exit(code)
+
+
+@app.command(name="install")
+def install(client: str = typer.Argument(..., help="cursor, vscode, or claude-desktop")) -> None:
+    """Register this DataViz MCP executable with a common MCP client."""
+    from dataviz_mcp.install import client_config_path
+    from dataviz_mcp.install import merge_mcp_server
+
+    try:
+        path = client_config_path(client)
+        command = str(Path(sys.executable).parent / ("pls.exe" if sys.platform == "win32" else "pls"))
+        unchanged, _ = merge_mcp_server(path, command)
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        typer.echo(f"Could not update client configuration: {exc}", err=True)
+        raise typer.Exit(1) from None
+    typer.echo(f"DataViz MCP is {'already registered' if unchanged else 'registered'} in {path}")
 
 
 def main() -> None:
