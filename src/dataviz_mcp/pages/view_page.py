@@ -4,6 +4,8 @@ This module implements the /view page endpoint that executes and displays
 a single visualization by ID.
 """
 
+import contextlib
+import io
 import logging
 import sys
 import traceback
@@ -14,6 +16,7 @@ import panel as pn
 from bokeh.events import DocumentReady
 from bokeh.models import CustomJS
 
+from dataviz_mcp import diagnostics
 from dataviz_mcp.database import Snippet
 from dataviz_mcp.database import get_db
 from dataviz_mcp.utils import execute_in_module
@@ -53,7 +56,10 @@ def create_view(snippet_id: str) -> pn.viewable.Viewable | None:
 
     start_time = datetime.now(timezone.utc)
     try:
-        result = _execute_code(snippet)
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
+            result = _execute_code(snippet)
+        diagnostics.record(snippet.id, output.getvalue())
         execution_time = (datetime.now(timezone.utc) - start_time).total_seconds()
         snippet.status = "success"
         snippet.error_message = ""
