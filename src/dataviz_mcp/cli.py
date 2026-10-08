@@ -314,7 +314,12 @@ def install_browser() -> None:
 
 
 @app.command(name="install")
-def install(client: str = typer.Argument(..., help="cursor, vscode, or claude-desktop")) -> None:
+def install(
+    client: str = typer.Argument(
+        ...,
+        help="cursor, vscode, claude-desktop, windsurf, cline, gemini, kiro, or copilot",
+    )
+) -> None:
     """Register this DataViz MCP executable with a common MCP client."""
     from dataviz_mcp.install import client_config_path
     from dataviz_mcp.install import merge_mcp_server
