@@ -94,6 +94,8 @@ class Config(BaseModel):
     screenshot_height: int = Field(default=800, description="Viewport height (px) for screenshot capture")
     screenshot_settle_ms: int = Field(default=1200, description="Delay (ms) after content mounts before capturing, to let Bokeh finish drawing")
     screenshot_timeout_ms: int = Field(default=30000, description="Max time (ms) to wait for the page to load before capturing")
+    screenshot_max_tiles: int = Field(default=4, description="Maximum viewport-sized tiles returned for a full-page screenshot")
+    screenshot_max_actions: int = Field(default=20, description="Maximum browser actions allowed in one screenshot request")
     diagnostics_max_chars: int = Field(default=4000, description="Maximum characters returned for each screenshot diagnostic stream")
     diagnostics_max_console_lines: int = Field(default=200, description="Maximum browser console messages collected during a screenshot")
 
@@ -116,6 +118,8 @@ def get_config() -> Config:
             screenshot_height=int(os.getenv("DATAVIZ_MCP_SCREENSHOT_HEIGHT", "800")),
             screenshot_settle_ms=int(os.getenv("DATAVIZ_MCP_SCREENSHOT_SETTLE_MS", "1200")),
             screenshot_timeout_ms=int(os.getenv("DATAVIZ_MCP_SCREENSHOT_TIMEOUT_MS", "30000")),
+            screenshot_max_tiles=int(os.getenv("DATAVIZ_MCP_SCREENSHOT_MAX_TILES", "4")),
+            screenshot_max_actions=int(os.getenv("DATAVIZ_MCP_SCREENSHOT_MAX_ACTIONS", "20")),
             diagnostics_max_chars=int(os.getenv("DATAVIZ_MCP_DIAGNOSTICS_MAX_CHARS", "4000")),
             diagnostics_max_console_lines=int(os.getenv("DATAVIZ_MCP_DIAGNOSTICS_MAX_CONSOLE_LINES", "200")),
         )

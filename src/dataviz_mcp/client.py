@@ -5,11 +5,14 @@ via its REST API. The client can be used with either a locally-managed subproces
 or a remote server instance.
 """
 
+import base64
+import json
 import logging
 
 import requests  # type: ignore[import-untyped]
 
 from dataviz_mcp import diagnostics
+from dataviz_mcp import screenshot
 
 logger = logging.getLogger(__name__)
 
@@ -108,16 +111,17 @@ class DisplayClient:
         width: int | None = None,
         height: int | None = None,
         full_page: bool = False,
-    ) -> tuple[bytes | None, str | None, dict[str, str]]:
-        """Fetch a PNG screenshot of a snippet's rendered ``/view`` page.
+        do: list | None = None,
+    ) -> tuple[screenshot.Capture | None, str | None, dict[str, str]]:
+        """Fetch a screenshot of a snippet's rendered ``/view`` page.
 
         Returns
         -------
-        tuple[bytes | None, str | None]
-            ``(png_bytes, None, diagnostics)`` on success, or
+        tuple[Capture | None, str | None]
+            ``(capture, None, diagnostics)`` on success, or
             ``(None, error_message, {})`` on failure.
         """
-        params: dict[str, str | int] = {"id": snippet_id, "full_page": str(full_page).lower()}
+        params: dict[str, str | int] = {"id": snippet_id, "full_page": str(full_page).lower(), "do": json.dumps(do) if do else ""}
         if width:
             params["width"] = width
         if height:
@@ -133,8 +137,18 @@ class DisplayClient:
             logger.warning("Screenshot request error for snippet %s: %s", snippet_id, e)
             return None, f"Screenshot request failed: {e}", {}
 
-        if response.status_code == 200 and "image/png" in response.headers.get("Content-Type", ""):
-            return response.content, None, diagnostics.decode(response.headers.get(diagnostics.HEADER, ""))
+        if response.status_code == 200:
+            meta = screenshot.decode_meta(response.headers.get(screenshot.META_HEADER, ""))
+            notes = diagnostics.decode(response.headers.get(diagnostics.HEADER, ""))
+            content_type = response.headers.get("Content-Type", "")
+            if "image/png" in content_type:
+                return screenshot.apply_meta(screenshot.Capture(images=[("", response.content)]), meta), None, notes
+            if "application/json" in content_type:
+                try:
+                    images = [(item.get("label", ""), base64.b64decode(item["png"])) for item in response.json()["images"]]
+                except Exception as e:
+                    return None, f"Malformed multi-image screenshot response: {e}", {}
+                return screenshot.apply_meta(screenshot.Capture(images=images), meta), None, notes
 
         try:
             body = response.json()
