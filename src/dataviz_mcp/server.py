@@ -444,7 +444,8 @@ async def _ensure_client_ready(ctx: Context | None) -> None:
 
 @mcp.tool(name="show", app=AppConfig(resource_uri=SHOW_RESOURCE_URI))
 async def show(
-    code: str,
+    code: str = "",
+    draft_id: str = "",
     name: str = "",
     description: str = "",
     method: Literal["inline", "server"] = "inline",
@@ -475,8 +476,8 @@ async def show(
 
     Parameters
     ----------
-    code : str
-        Python code to execute.
+    code : str, optional
+        Python code to execute. Omit when promoting a reviewed draft.
         For ``"inline"`` method: the last expression is displayed. It must be
         fully dedented (no leading whitespace on top-level statements).
         For ``"server"`` method: call ``.servable()`` on objects to display.
@@ -503,6 +504,9 @@ async def show(
     """
     global _manager, _client
 
+    if not code and not draft_id:
+        raise ToolError("Pass code=... for a new visualization or draft_id=... to publish a reviewed draft.")
+
     client_name = _get_mcp_client_name(ctx)
     # Claude Desktop (frame-src CSP) and Cowork (sandboxed iframe) cannot reach the live server, so they get an "Open in browser" button, not an inline preview.
     link_only = client_name == "claude-ai" or client_name.startswith("local-agent-mode-")
@@ -517,9 +521,10 @@ async def show(
         return _retry_payload(name=name, description=description, method=method, zoom=zoom, layer=layer, error_detail=detail)
 
     # Static validation failure: return a quiet retry payload (not a loud error) so the App pane shows a friendly "Refining…" state while the model fixes the code.
-    validation = _run_validation(code, method)
-    if not validation["valid"]:
-        return _retry(validation.get("layer", "validation"), validation.get("message", "Validation failed."))
+    if not draft_id:
+        validation = _run_validation(code, method)
+        if not validation["valid"]:
+            return _retry(validation.get("layer", "validation"), validation.get("message", "Validation failed."))
 
     try:
         response = _client.create_snippet(
@@ -528,6 +533,7 @@ async def show(
             description=description,
             method=method,
             validated=False,
+            draft_id=draft_id,
         )
         url = _externalize_url(response.get("url", ""))
 

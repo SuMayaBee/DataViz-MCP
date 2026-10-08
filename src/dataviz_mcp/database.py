@@ -264,6 +264,7 @@ class SnippetDatabase:
         execution_time: Optional[float] = None,
         requirements: Optional[list[str]] = None,
         extensions: Optional[list[str]] = None,
+        draft: Optional[bool] = None,
     ) -> bool:
         """Update a snippet record.
 
@@ -309,6 +310,10 @@ class SnippetDatabase:
         if extensions is not None:
             updates.append("extensions = ?")
             params.append(json.dumps(extensions))
+
+        if draft is not None:
+            updates.append("draft = ?")
+            params.append(int(draft))
 
         if not updates:
             return False
@@ -457,6 +462,22 @@ class SnippetDatabase:
             cursor.execute("DELETE FROM snippets WHERE draft = 1 AND updated_at < ?", (cutoff,))
             conn.commit()
             return cursor.rowcount
+
+    def promote_draft(self, snippet_id: str, name: Optional[str] = None, description: Optional[str] = None) -> Snippet:
+        """Make a successfully rendered private draft visible without re-running it."""
+        snippet = self.get_snippet(snippet_id)
+        if snippet is None:
+            raise ValueError(f"No draft found with id {snippet_id!r}. Create and review it again.")
+        if not snippet.draft:
+            raise ValueError(f"Snippet {snippet_id!r} is not a private draft.")
+        if snippet.status != "success":
+            detail = f": {snippet.error_message}" if snippet.error_message else ""
+            raise ValueError(f"Draft {snippet_id!r} is not ready to show{detail}")
+        self.update_snippet(snippet_id, draft=False)
+        promoted = self.get_snippet(snippet_id)
+        if promoted is None:
+            raise ValueError(f"Draft {snippet_id!r} disappeared while being promoted")
+        return promoted
 
     def create_visualization(
         self,

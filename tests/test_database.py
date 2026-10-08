@@ -158,6 +158,24 @@ class TestSnippetDatabase:
         assert draft.status == "pending"
         assert draft.draft is True
 
+    def test_promoting_a_reviewed_draft_keeps_the_same_snippet(self, temp_db):
+        draft = Snippet(app="x = 1", name="Private", method="inline", status="success", draft=True)
+        temp_db.create_snippet(draft)
+
+        promoted = temp_db.promote_draft(draft.id)
+
+        assert promoted.id == draft.id
+        assert promoted.app == "x = 1"
+        assert promoted.draft is False
+        assert temp_db.list_snippets()[0].id == draft.id
+
+    def test_failed_draft_cannot_be_promoted(self, temp_db):
+        draft = Snippet(app="x = 1", method="inline", status="error", draft=True)
+        temp_db.create_snippet(draft)
+
+        with pytest.raises(ValueError, match="not ready"):
+            temp_db.promote_draft(draft.id)
+
     def test_create_visualization_with_pyodide_method(self, temp_db):
         """Pyodide execution method is accepted and persisted."""
         snippet = temp_db.create_visualization(
