@@ -39,6 +39,18 @@ uv tool install "dataviz-mcp[pydata]"
 Use the **absolute path** printed by `which pls` above — not just `pls`.
 Full setup instructions for each client: [docs → Connect to your MCP client](https://SuMayaBee.github.io/DataViz-MCP/tutorials/installation/#connect-to-your-mcp-client)
 
+For the supported desktop and editor clients, let DataViz MCP add just its own
+configuration entry while preserving any other configured servers:
+
+```bash
+pls install cursor
+# also: vscode, claude-desktop, windsurf, cline, gemini, kiro, copilot
+```
+
+You can tailor the AI guidance without forking the project. Put optional
+`"instructions"` and `"screenshot"` additions in a JSON file, then start the
+MCP server with `pls mcp --prompts rules.json`.
+
 | Client | Config location |
 |---|---|
 | **VS Code** | `.vscode/mcp.json` |
@@ -48,6 +60,11 @@ Full setup instructions for each client: [docs → Connect to your MCP client](h
 | **claude.ai** | HTTP transport + tunnel — see [docs](https://SuMayaBee.github.io/DataViz-MCP/tutorials/installation/#connect-to-your-mcp-client) |
 
 ## Usage
+
+For a safe visual iteration loop, use `screenshot(code=...)` to review a private
+draft, use `edit(...)` for small source changes, then call `show(draft_id=...)`
+to publish exactly the reviewed result. Use `evaluate(code=...)` for text-only
+Python checks that do not need a rendered visualization.
 
 ```
 $ pls
