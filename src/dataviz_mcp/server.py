@@ -136,13 +136,9 @@ def _brief_error(error_detail: str) -> str:
     return brief
 
 
-# Chars per token for the payload size estimate. Prose averages ~4, so this is a rough figure rather than an exact count. No tokenizer bundled.
-_CHARS_PER_TOKEN = 4
-
-
 def _estimate_tokens(chars: int) -> int:
     """Estimate the token cost of *chars* characters of payload text."""
-    return round(chars / _CHARS_PER_TOKEN)
+    return round(chars / get_config().chars_per_token)
 
 
 def _attach_token_count(payload: dict) -> None:

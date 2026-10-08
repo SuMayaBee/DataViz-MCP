@@ -97,6 +97,7 @@ class Config(BaseModel):
     screenshot_max_tiles: int = Field(default=4, description="Maximum viewport-sized tiles returned for a full-page screenshot")
     screenshot_max_actions: int = Field(default=20, description="Maximum browser actions allowed in one screenshot request")
     draft_retention_hours: float = Field(default=24, description="Hours to retain private visualization drafts")
+    chars_per_token: float = Field(default=4, description="Characters per token used for response context estimates")
     diagnostics_max_chars: int = Field(default=4000, description="Maximum characters returned for each screenshot diagnostic stream")
     diagnostics_max_console_lines: int = Field(default=200, description="Maximum browser console messages collected during a screenshot")
 
@@ -122,6 +123,7 @@ def get_config() -> Config:
             screenshot_max_tiles=int(os.getenv("DATAVIZ_MCP_SCREENSHOT_MAX_TILES", "4")),
             screenshot_max_actions=int(os.getenv("DATAVIZ_MCP_SCREENSHOT_MAX_ACTIONS", "20")),
             draft_retention_hours=float(os.getenv("DATAVIZ_MCP_DRAFT_RETENTION_HOURS", "24")),
+            chars_per_token=float(os.getenv("DATAVIZ_MCP_CHARS_PER_TOKEN", "4")),
             diagnostics_max_chars=int(os.getenv("DATAVIZ_MCP_DIAGNOSTICS_MAX_CHARS", "4000")),
             diagnostics_max_console_lines=int(os.getenv("DATAVIZ_MCP_DIAGNOSTICS_MAX_CONSOLE_LINES", "200")),
         )
