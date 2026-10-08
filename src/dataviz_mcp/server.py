@@ -25,6 +25,7 @@ from fastmcp.tools.tool import ToolResult
 from fastmcp.utilities.types import Image
 from mcp.types import TextContent
 
+from dataviz_mcp import diagnostics
 from dataviz_mcp.client import DisplayClient
 from dataviz_mcp.config import get_config
 from dataviz_mcp.manager import PanelServerManager
@@ -673,7 +674,7 @@ async def screenshot(
 
     # Capture the existing snippet's rendered /view page as a PNG.
     # The endpoint 404s if the id is unknown.
-    png, error = await asyncio.to_thread(_client.get_screenshot, snippet_id, width, height, full_page)
+    png, error, captured = await asyncio.to_thread(_client.get_screenshot, snippet_id, width, height, full_page)
     if error:
         raise ToolError(f"Screenshot failed: {error}")
     if not png:
@@ -687,9 +688,8 @@ async def screenshot(
         "Do NOT recompute from raw data — rendered output and raw data frequently disagree "
         "(row order, axis inversion, sorting, binning)."
     )
-    return ToolResult(
-        content=[
-            Image(data=png, format="png").to_image_content(),
-            TextContent(type="text", text=reminder),
-        ]
-    )
+    content = [Image(data=png, format="png").to_image_content()]
+    if output := diagnostics.render(captured):
+        content.append(TextContent(type="text", text=f"--- output ---\n{output}"))
+    content.append(TextContent(type="text", text=reminder))
+    return ToolResult(content=content)

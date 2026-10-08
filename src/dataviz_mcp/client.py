@@ -9,6 +9,8 @@ import logging
 
 import requests  # type: ignore[import-untyped]
 
+from dataviz_mcp import diagnostics
+
 logger = logging.getLogger(__name__)
 
 
@@ -106,13 +108,14 @@ class DisplayClient:
         width: int | None = None,
         height: int | None = None,
         full_page: bool = False,
-    ) -> tuple[bytes | None, str | None]:
+    ) -> tuple[bytes | None, str | None, dict[str, str]]:
         """Fetch a PNG screenshot of a snippet's rendered ``/view`` page.
 
         Returns
         -------
         tuple[bytes | None, str | None]
-            ``(png_bytes, None)`` on success, or ``(None, error_message)`` on failure.
+            ``(png_bytes, None, diagnostics)`` on success, or
+            ``(None, error_message, {})`` on failure.
         """
         params: dict[str, str | int] = {"id": snippet_id, "full_page": str(full_page).lower()}
         if width:
@@ -128,10 +131,10 @@ class DisplayClient:
             )
         except requests.RequestException as e:
             logger.warning("Screenshot request error for snippet %s: %s", snippet_id, e)
-            return None, f"Screenshot request failed: {e}"
+            return None, f"Screenshot request failed: {e}", {}
 
         if response.status_code == 200 and "image/png" in response.headers.get("Content-Type", ""):
-            return response.content, None
+            return response.content, None, diagnostics.decode(response.headers.get(diagnostics.HEADER, ""))
 
         try:
             body = response.json()
@@ -139,7 +142,7 @@ class DisplayClient:
         except ValueError:
             message = response.text or f"HTTP {response.status_code}"
         logger.warning("Screenshot failed (HTTP %s) for snippet %s: %s", response.status_code, snippet_id, message)
-        return None, message
+        return None, message, {}
 
     def close(self) -> None:
         """Close the HTTP session and cleanup resources."""

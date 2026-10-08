@@ -15,6 +15,8 @@ import logging
 import os
 import sys
 
+from dataviz_mcp.config import get_config
+
 logger = logging.getLogger(__name__)
 
 
@@ -108,12 +110,22 @@ class _BrowserManager:
         full_page: bool,
         settle_ms: int,
         timeout_ms: int,
+        console_sink: list[str] | None = None,
     ) -> bytes:
         """Load ``url`` in a fresh browser context and return a PNG screenshot."""
         browser = await self._ensure_browser()
         context = await browser.new_context(viewport={"width": width, "height": height})
         try:
             page = await context.new_page()
+            if console_sink is not None:
+                max_lines = get_config().diagnostics_max_console_lines
+
+                def note(text: str) -> None:
+                    if len(console_sink) < max_lines:
+                        console_sink.append(text)
+
+                page.on("console", lambda msg: note(f"[{msg.type}] {msg.text}"))
+                page.on("pageerror", lambda error: note(f"[pageerror] {error}"))
             # Use "load" rather than "networkidle": Panel's ``server`` method keeps
             # a live Bokeh websocket open, so the network never goes idle.
             await page.goto(url, wait_until="load", timeout=timeout_ms)
@@ -151,6 +163,7 @@ async def capture_png(
     full_page: bool = False,
     settle_ms: int = 1200,
     timeout_ms: int = 30000,
+    console_sink: list[str] | None = None,
 ) -> bytes:
     """Capture a PNG screenshot of ``url`` using a shared headless browser.
 
@@ -171,4 +184,5 @@ async def capture_png(
         full_page=full_page,
         settle_ms=settle_ms,
         timeout_ms=timeout_ms,
+        console_sink=console_sink,
     )

@@ -13,6 +13,7 @@ from datetime import timezone
 
 from tornado.web import RequestHandler
 
+from dataviz_mcp import diagnostics
 from dataviz_mcp.config import get_config
 from dataviz_mcp.database import get_db
 from dataviz_mcp.validation import SecurityError
@@ -162,6 +163,7 @@ class ScreenshotEndpoint(RequestHandler):
         view_url = f"http://{_local_host(config.host)}:{config.port}/view?id={snippet_id}"
 
         try:
+            console_lines: list[str] = []
             png = await capture_png(
                 view_url,
                 width=width,
@@ -169,6 +171,7 @@ class ScreenshotEndpoint(RequestHandler):
                 full_page=full_page,
                 settle_ms=config.screenshot_settle_ms,
                 timeout_ms=config.screenshot_timeout_ms,
+                console_sink=console_lines,
             )
         except PlaywrightUnavailableError as e:
             self.set_status(503)
@@ -184,6 +187,9 @@ class ScreenshotEndpoint(RequestHandler):
 
         self.set_status(200)
         self.set_header("Content-Type", "image/png")
+        payload = diagnostics.build(diagnostics.pop(snippet_id), console_lines)
+        if payload:
+            self.set_header(diagnostics.HEADER, diagnostics.encode(payload))
         self.write(png)
 
 
