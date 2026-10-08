@@ -26,3 +26,17 @@ def test_mcp_help():
     result = runner.invoke(app, ["mcp", "--help"])
     assert result.exit_code == 0
     assert "transport" in result.output.lower()
+
+
+def test_mcp_help_documents_prompt_overrides():
+    """Prompt customisation is discoverable from the primary command help."""
+    result = runner.invoke(app, ["mcp", "--help"])
+    assert result.exit_code == 0
+    assert "--prompts" in result.output
+
+
+def test_install_help_lists_supported_clients():
+    """The installer is discoverable without modifying a user configuration."""
+    result = runner.invoke(app, ["install", "--help"])
+    assert result.exit_code == 0
+    assert "claude-desktop" in result.output
