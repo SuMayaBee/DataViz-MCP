@@ -17,7 +17,12 @@ from tornado.web import RequestHandler
 from dataviz_mcp import diagnostics
 from dataviz_mcp.config import get_config
 from dataviz_mcp.database import get_db
+from dataviz_mcp.utils import validate_code
+from dataviz_mcp.utils import validate_extension_availability
 from dataviz_mcp.validation import SecurityError
+from dataviz_mcp.validation import ast_check
+from dataviz_mcp.validation import check_packages
+from dataviz_mcp.validation import ruff_check
 
 logger = logging.getLogger(__name__)
 
@@ -113,6 +118,83 @@ class SnippetEndpoint(RequestHandler):
 def _local_host(host: str) -> str:
     """Return a host usable for self-connections (the server screenshots itself)."""
     return "127.0.0.1" if host in ("0.0.0.0", "::", "") else host
+
+
+class SnippetEditEndpoint(RequestHandler):
+    """Replace one exact fragment of a snippet without resending all its code."""
+
+    def _error(self, status: int, message: str, error: str | None = None) -> None:
+        self.set_status(status)
+        self.set_header("Content-Type", "application/json")
+        self.write({"error": error or message, "message": message})
+
+    def post(self):
+        """Validate and apply one unambiguous source replacement."""
+        try:
+            body = json.loads(self.request.body.decode("utf-8"))
+        except ValueError:
+            self._error(400, "Request body must be JSON")
+            return
+        snippet_id = body.get("snippet_id", "")
+        old_str = body.get("old_str", "")
+        new_str = body.get("new_str", "")
+        if not snippet_id:
+            self._error(400, "Missing 'snippet_id' in request body")
+            return
+        if not old_str:
+            self._error(400, "Missing 'old_str' in request body")
+            return
+
+        db = get_db()
+        snippet = db.get_snippet(snippet_id)
+        if snippet is None:
+            self._error(404, f"No snippet found with id {snippet_id!r}")
+            return
+        matches = snippet.app.count(old_str)
+        if matches == 0:
+            self._error(400, "old_str was not found in the stored code. Match its text and indentation exactly.", error="NoMatch")
+            return
+        if matches > 1:
+            self._error(400, f"old_str appears {matches} times. Include more surrounding text to make the edit unique.", error="AmbiguousMatch")
+            return
+        edited = snippet.app.replace(old_str, new_str, 1)
+        try:
+            if syntax_error := ast_check(edited):
+                self._error(400, f"That edit would leave the code unparsable: {syntax_error}", error="SyntaxError")
+                return
+            ruff_check(edited)
+            if package_error := check_packages(edited):
+                self._error(400, package_error, error="PackageError")
+                return
+            if snippet.method == "server":
+                validate_extension_availability(edited)
+            if error := validate_code(edited):
+                self._error(400, f"The edited code no longer runs: {error}", error="RuntimeError")
+                return
+        except SecurityError as e:
+            self._error(400, str(e), error="SecurityError")
+            return
+        except Exception as e:
+            self._error(400, f"The edited code could not be validated: {e}", error="ValidationError")
+            return
+
+        if snippet.draft:
+            db.update_snippet(snippet.id, app=edited, status="success", error_message="")
+            result_id, forked = snippet.id, False
+        else:
+            fork = db.create_visualization(
+                app=edited,
+                name=snippet.name,
+                description=snippet.description,
+                method=snippet.method,
+                execute=False,
+                format=False,
+                draft=True,
+            )
+            db.update_snippet(fork.id, status="success")
+            result_id, forked = fork.id, True
+        self.set_header("Content-Type", "application/json")
+        self.write({"id": result_id, "chars": len(edited), "forked": forked})
 
 
 class ScreenshotEndpoint(RequestHandler):

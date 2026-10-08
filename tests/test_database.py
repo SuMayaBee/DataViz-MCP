@@ -176,6 +176,16 @@ class TestSnippetDatabase:
         with pytest.raises(ValueError, match="not ready"):
             temp_db.promote_draft(draft.id)
 
+    def test_code_can_be_updated_without_creating_a_second_row(self, temp_db):
+        draft = Snippet(app="colour = 'blue'", method="inline", draft=True)
+        temp_db.create_snippet(draft)
+
+        assert temp_db.update_snippet(draft.id, app="colour = 'green'", status="success")
+        updated = temp_db.get_snippet(draft.id)
+        assert updated is not None
+        assert updated.app == "colour = 'green'"
+        assert updated.status == "success"
+
     def test_create_visualization_with_pyodide_method(self, temp_db):
         """Pyodide execution method is accepted and persisted."""
         snippet = temp_db.create_visualization(

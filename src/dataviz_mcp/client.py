@@ -210,6 +210,20 @@ class DisplayClient:
             message = response.text or f"HTTP {response.status_code}"
         return None, message, {}, ""
 
+    def edit_snippet(self, snippet_id: str, old_str: str, new_str: str) -> dict:
+        """Apply one exact source replacement without resending a full snippet."""
+        try:
+            response = self.session.post(
+                f"{self.base_url}/api/snippet/edit",
+                json={"snippet_id": snippet_id, "old_str": old_str, "new_str": new_str},
+                timeout=self.timeout,
+            )
+            return response.json()
+        except requests.RequestException as e:
+            return {"error": "RequestException", "message": f"Edit request failed: {e}"}
+        except ValueError:
+            return {"error": f"HTTP {response.status_code}", "message": response.text or "Edit returned a non-JSON response."}
+
     def close(self) -> None:
         """Close the HTTP session and cleanup resources."""
         if self.session:

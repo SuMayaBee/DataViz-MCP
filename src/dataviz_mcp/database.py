@@ -265,6 +265,7 @@ class SnippetDatabase:
         requirements: Optional[list[str]] = None,
         extensions: Optional[list[str]] = None,
         draft: Optional[bool] = None,
+        app: Optional[str] = None,
     ) -> bool:
         """Update a snippet record.
 
@@ -314,6 +315,10 @@ class SnippetDatabase:
         if draft is not None:
             updates.append("draft = ?")
             params.append(int(draft))
+
+        if app is not None:
+            updates.append("app = ?")
+            params.append(app)
 
         if not updates:
             return False
