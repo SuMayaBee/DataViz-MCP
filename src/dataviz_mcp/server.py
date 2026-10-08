@@ -29,6 +29,7 @@ from dataviz_mcp import diagnostics
 from dataviz_mcp.client import DisplayClient
 from dataviz_mcp.config import get_config
 from dataviz_mcp.manager import PanelServerManager
+from dataviz_mcp.prompts import render as render_prompt
 from dataviz_mcp.utils import ExtensionError
 from dataviz_mcp.utils import validate_extension_availability
 from dataviz_mcp.validation import SecurityError
@@ -327,7 +328,7 @@ _RENDERING_INSTRUCTIONS = (
 
 mcp = FastMCP(
     "DataViz MCP",
-    instructions=(
+    instructions=render_prompt(
         "DataViz MCP executes Python code snippets and renders the resulting "
         "visualizations as live, interactive web pages.\n\n"
         "WORKFLOW:\n"
@@ -359,7 +360,7 @@ mcp = FastMCP(
         "these require a substantive code rewrite, not a retry. "
         "`show` raises `ValidationError` for syntax errors, missing packages, or "
         "missing Panel extension declarations — fix the reported issue and try again."
-    ),
+    , "instructions"),
     lifespan=app_lifespan,
 )
 
@@ -706,13 +707,16 @@ async def screenshot(
     if not capture or not capture.images:
         raise ToolError("Screenshot capture returned no image data.")
 
-    reminder = (
+    reminder = render_prompt(
+        (
         "IMAGE QUALITY CHECK — before answering:\n"
         "· Blurry, pixelated, or clipped? → answer from the code/data instead.\n"
         "· Text/labels too small to read confidently? → answer from the code/data instead.\n"
         "· Image is clear and complete? → answer from THIS image only. "
         "Do NOT recompute from raw data — rendered output and raw data frequently disagree "
         "(row order, axis inversion, sorting, binning)."
+        ),
+        "screenshot",
     )
     content = []
     for label, png in capture.images:
