@@ -5,6 +5,8 @@ HTTP endpoints for creating visualizations and checking server health.
 """
 
 import base64
+import contextlib
+import io
 import json
 import logging
 import sys
@@ -17,6 +19,8 @@ from tornado.web import RequestHandler
 from dataviz_mcp import diagnostics
 from dataviz_mcp.config import get_config
 from dataviz_mcp.database import get_db
+from dataviz_mcp.utils import execute_in_module
+from dataviz_mcp.utils import extract_last_expression
 from dataviz_mcp.utils import validate_code
 from dataviz_mcp.utils import validate_extension_availability
 from dataviz_mcp.validation import SecurityError
@@ -379,6 +383,55 @@ class ScreenshotEndpoint(RequestHandler):
         else:
             self.set_header("Content-Type", "image/png")
             self.write(capture.png or b"")
+
+
+class EvaluateEndpoint(RequestHandler):
+    """Execute code for textual inspection without creating a visualization."""
+
+    def post(self):
+        """Run the posted code and return stdout, final expression, or error JSON."""
+        try:
+            body = json.loads(self.request.body.decode("utf-8"))
+        except ValueError:
+            self.set_status(400)
+            self.write({"error": "ValueError", "message": "Request body must be JSON"})
+            return
+        code = body.get("code", "")
+        if not code:
+            self.set_status(400)
+            self.write({"error": "ValueError", "message": "Missing 'code' in request body"})
+            return
+        if syntax_error := ast_check(code):
+            self.set_status(400)
+            self.write({"error": "SyntaxError", "message": syntax_error})
+            return
+
+        output = io.StringIO()
+        result = ""
+        error = ""
+        trace = ""
+        module_name = f"dataviz_eval_{abs(hash(code)) % (10**10)}"
+        try:
+            with contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
+                statements, expression = extract_last_expression(code)
+                try:
+                    namespace = execute_in_module(statements, module_name=module_name, cleanup=False)
+                    if expression and (value := eval(expression, namespace)) is not None:  # noqa: S307
+                        result = repr(value)
+                finally:
+                    sys.modules.pop(module_name, None)
+        except Exception as e:
+            error = f"{type(e).__name__}: {e}"
+            trace = traceback.format_exc()
+        self.set_header("Content-Type", "application/json")
+        self.write(
+            {
+                "stdout": diagnostics.truncate(output.getvalue()),
+                "result": diagnostics.truncate(result),
+                "error": error,
+                "traceback": diagnostics.truncate(trace),
+            }
+        )
 
 
 class HealthEndpoint(RequestHandler):
