@@ -736,3 +736,22 @@ async def screenshot(
         content.append(TextContent(type="text", text=f"--- output ---\n{output}"))
     content.append(TextContent(type="text", text=reminder))
     return ToolResult(content=content)
+
+
+@mcp.tool(name="edit")
+async def edit(snippet_id: str, old_str: str, new_str: str = "", ctx: Context | None = None) -> str:
+    """Change one exact part of a visualization without resending all its code.
+
+    ``old_str`` must appear exactly once, including indentation. A private draft
+    is updated in place. A visualization the user already has is copied into a
+    new private draft first, keeping the live version unchanged until you promote
+    the returned draft id with ``show(draft_id=...)``.
+    """
+    await _ensure_client_ready(ctx)
+    result = await asyncio.to_thread(_client.edit_snippet, snippet_id, old_str, new_str)
+    if message := result.get("message"):
+        return f"Edit not applied: {message}"
+    new_id = result.get("id", snippet_id)
+    if result.get("forked"):
+        return f"Created private draft {new_id}; the shown visualization {snippet_id} is unchanged. Review it, then call show(draft_id=\"{new_id}\") when ready."
+    return f"Updated private draft {new_id} ({result.get('chars', 0)} characters). Call show(draft_id=\"{new_id}\") when ready."
