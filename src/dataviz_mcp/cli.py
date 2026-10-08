@@ -3,6 +3,7 @@
 import logging
 import os
 import sys
+from pathlib import Path
 from typing import Annotated
 
 # On Windows, conda/pixi environments require Library/bin and DLLs on PATH so
@@ -172,6 +173,11 @@ def mcp(
         "-v",
         help="Enable verbose logging.",
     ),
+    prompts: Path | None = typer.Option(  # noqa: B008
+        None,
+        "--prompts",
+        help="JSON file with optional 'instructions' and 'screenshot' AI instruction additions.",
+    ),
 ) -> None:
     """Start as an MCP server for AI assistants.
 
@@ -188,6 +194,9 @@ def mcp(
         logging.basicConfig(level=logging.DEBUG)
     else:
         logging.basicConfig(level=logging.INFO)
+
+    if prompts is not None:
+        os.environ["DATAVIZ_MCP_PROMPTS_FILE"] = str(prompts)
 
     from dataviz_mcp.server import mcp as mcp_server
 
