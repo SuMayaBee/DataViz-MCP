@@ -224,6 +224,16 @@ class DisplayClient:
         except ValueError:
             return {"error": f"HTTP {response.status_code}", "message": response.text or "Edit returned a non-JSON response."}
 
+    def evaluate(self, code: str) -> dict:
+        """Execute code on the display server and return text rather than an image."""
+        try:
+            response = self.session.post(f"{self.base_url}/api/evaluate", json={"code": code}, timeout=max(self.timeout, 60))
+            return response.json()
+        except requests.RequestException as e:
+            return {"error": "RequestException", "message": f"Evaluate request failed: {e}"}
+        except ValueError:
+            return {"error": f"HTTP {response.status_code}", "message": response.text or "Evaluate returned a non-JSON response."}
+
     def close(self) -> None:
         """Close the HTTP session and cleanup resources."""
         if self.session:

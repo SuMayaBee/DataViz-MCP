@@ -8,6 +8,7 @@ import logging
 from urllib.parse import urlparse
 
 from dataviz_mcp.config import get_config
+from dataviz_mcp.endpoints import EvaluateEndpoint
 from dataviz_mcp.endpoints import HealthEndpoint
 from dataviz_mcp.endpoints import ScreenshotEndpoint
 from dataviz_mcp.endpoints import SnippetEditEndpoint
@@ -93,6 +94,7 @@ def main(address: str = "localhost", port: int = 5077, show: bool = True) -> Non
     extra_patterns = [
         (r"/api/snippet", SnippetEndpoint),
         (r"/api/snippet/edit", SnippetEditEndpoint),
+        (r"/api/evaluate", EvaluateEndpoint),
         (r"/api/screenshot", ScreenshotEndpoint),
         (r"/api/health", HealthEndpoint),
     ]

@@ -755,3 +755,30 @@ async def edit(snippet_id: str, old_str: str, new_str: str = "", ctx: Context | 
     if result.get("forked"):
         return f"Created private draft {new_id}; the shown visualization {snippet_id} is unchanged. Review it, then call show(draft_id=\"{new_id}\") when ready."
     return f"Updated private draft {new_id} ({result.get('chars', 0)} characters). Call show(draft_id=\"{new_id}\") when ready."
+
+
+@mcp.tool(name="evaluate")
+async def evaluate(code: str, ctx: Context | None = None) -> str:
+    """Run Python for a text answer without rendering or creating a visualization.
+
+    Use this for values, columns, shapes, and small checks. It does not create a
+    feed entry and does not launch a browser. Use ``show`` or ``screenshot`` when
+    the question is about an actual rendered visualization.
+    """
+    await _ensure_client_ready(ctx)
+    validation = _run_validation(code, "inline")
+    if not validation["valid"]:
+        raise ToolError(f"Evaluation validation failed [{validation['layer']}]: {validation['message']}")
+    result = await asyncio.to_thread(_client.evaluate, code)
+    if message := result.get("message"):
+        raise ToolError(message)
+    parts = []
+    if result.get("stdout"):
+        parts.append(result["stdout"].rstrip())
+    if result.get("result"):
+        parts.append(f"=> {result['result']}")
+    if result.get("traceback"):
+        parts.append(result["traceback"].rstrip())
+    elif result.get("error"):
+        parts.append(result["error"])
+    return "\n".join(parts) if parts else "(no output)"
