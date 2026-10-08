@@ -13,6 +13,7 @@ from dataviz_mcp.config import get_config
 logger = logging.getLogger(__name__)
 
 HEADER = "X-DataViz-Diagnostics"
+DRAFT_ID_HEADER = "X-DataViz-Draft-Id"
 MAX_ENTRIES = 64
 
 _store: OrderedDict[str, str] = OrderedDict()

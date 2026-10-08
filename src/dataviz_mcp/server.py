@@ -589,20 +589,24 @@ async def show(
 
 @mcp.tool(name="screenshot")
 async def screenshot(
-    snippet_id: str,
+    snippet_id: str = "",
+    code: str = "",
+    name: str = "",
+    description: str = "",
+    method: Literal["inline", "server"] = "inline",
     width: int = 1200,
     height: int = 800,
     full_page: bool = False,
     do: list[dict] | None = None,
     ctx: Context | None = None,
 ) -> ToolResult:
-    """See an EXISTING visualization — returns a PNG image of it to you (the LLM).
+    """See a visualization as a PNG image before or after it is shown to the user.
 
-    Pass the `snippet_id` that `show` returned; this tool screenshots that
-    already-rendered `/view` page and hands you the picture so you can answer a
-    follow-up question about how it LOOKS. It does NOT create or modify anything
-    and is NOT a substitute for `show` — the user already has the interactive
-    visualization in their browser.
+    Use ``screenshot(code=...)`` to render a private draft and inspect it before
+    calling ``show``. The draft remains out of the feed and the user never sees
+    the image. The response includes its draft id for the forthcoming handoff
+    flow. Use ``screenshot(snippet_id=...)`` for a visualization the user already
+    has, such as when answering a question about its appearance.
 
     ════════════════════════════════════════════════════════════════════════
     CRITICAL RULE — answering questions ABOUT a visualization's appearance:
@@ -657,6 +661,12 @@ async def screenshot(
     ----------
     snippet_id : str
         Id of the visualization to screenshot, as returned by `show`.
+    code : str, optional
+        New code to render privately. Takes precedence over ``snippet_id``.
+    name, description : str, optional
+        Metadata for a private draft.
+    method : {"inline", "server"}, default "inline"
+        Rendering method for private draft code.
     width : int, default 1200
         Browser viewport width in pixels.
     height : int, default 800
@@ -673,12 +683,22 @@ async def screenshot(
     Image
         PNG screenshot of the rendered visualization.
     """
-    if not snippet_id:
-        raise ToolError("Provide the snippet_id returned by show() to screenshot its rendered page.")
+    if not snippet_id and not code:
+        raise ToolError("Provide code=... for a private review or the snippet_id returned by show().")
 
-    # Capture the existing snippet's rendered /view page as a PNG.
-    # The endpoint 404s if the id is unknown.
-    capture, error, captured = await asyncio.to_thread(_client.get_screenshot, snippet_id, width, height, full_page, do)
+    await _ensure_client_ready(ctx)
+
+    draft_id = ""
+    if code:
+        validation = _run_validation(code, method)
+        if not validation["valid"]:
+            raise ToolError(f"Private draft validation failed [{validation['layer']}]: {validation['message']}")
+        capture, error, captured, draft_id = await asyncio.to_thread(
+            _client.screenshot_code, code, name, description, method, width, height, full_page, do
+        )
+    else:
+        capture, error, captured = await asyncio.to_thread(_client.get_screenshot, snippet_id, width, height, full_page, do)
+
     if error:
         raise ToolError(f"Screenshot failed: {error}")
     if not capture or not capture.images:
@@ -692,7 +712,11 @@ async def screenshot(
         "Do NOT recompute from raw data — rendered output and raw data frequently disagree "
         "(row order, axis inversion, sorting, binning)."
     )
-    content = [Image(data=png, format="png").to_image_content() for _, png in capture.images]
+    content = []
+    for label, png in capture.images:
+        if label and len(capture.images) > 1:
+            content.append(TextContent(type="text", text=f"--- {label} ---"))
+        content.append(Image(data=png, format="png").to_image_content())
     report = []
     if capture.controls:
         report.append("Controls found: " + ", ".join(capture.controls) + ".")
@@ -700,6 +724,8 @@ async def screenshot(
         report.append(f"This page needs {capture.total_tiles} screens; {capture.captured_tiles} were captured.")
     if report:
         content.append(TextContent(type="text", text="\n".join(report)))
+    if draft_id:
+        content.append(TextContent(type="text", text=f"Private draft id: {draft_id}"))
     if output := diagnostics.render(captured):
         content.append(TextContent(type="text", text=f"--- output ---\n{output}"))
     content.append(TextContent(type="text", text=reminder))

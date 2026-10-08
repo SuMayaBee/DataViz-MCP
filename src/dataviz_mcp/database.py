@@ -12,6 +12,7 @@ import sqlite3
 import uuid
 from contextlib import contextmanager
 from datetime import datetime
+from datetime import timedelta
 from datetime import timezone
 from pathlib import Path
 from typing import Generator
@@ -57,6 +58,7 @@ class Snippet(BaseModel):
     user: str = Field(default="guest", description="User who created the snippet")
     tags: list[str] = Field(default_factory=list, description="List of tags")
     slug: str = Field(default="", description="URL-friendly slug for persistent links")
+    draft: bool = Field(default=False, description="Private draft, excluded from the feed and search")
 
     @field_validator("slug")
     @classmethod
@@ -113,10 +115,15 @@ class SnippetDatabase:
                     extensions TEXT,
                     user TEXT DEFAULT 'guest',
                     tags TEXT,
-                    slug TEXT DEFAULT ''
+                    slug TEXT DEFAULT '',
+                    draft INTEGER NOT NULL DEFAULT 0
                 )
                 """
             )
+
+            cursor.execute("PRAGMA table_info(snippets)")
+            if "draft" not in {row[1] for row in cursor.fetchall()}:
+                cursor.execute("ALTER TABLE snippets ADD COLUMN draft INTEGER NOT NULL DEFAULT 0")
 
             # Create indexes
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_created_at ON snippets(created_at DESC)")
@@ -124,6 +131,7 @@ class SnippetDatabase:
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_method ON snippets(method)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_slug ON snippets(slug)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_user ON snippets(user)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_draft ON snippets(draft)")
 
             # Create full-text search virtual table
             cursor.execute(
@@ -164,8 +172,8 @@ class SnippetDatabase:
                 """
                 INSERT INTO snippets
                 (id, app, name, description, readme, method, created_at, updated_at, status,
-                 error_message, execution_time, requirements, extensions, user, tags, slug)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 error_message, execution_time, requirements, extensions, user, tags, slug, draft)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     snippet.id,
@@ -184,6 +192,7 @@ class SnippetDatabase:
                     snippet.user,
                     json.dumps(snippet.tags),
                     snippet.slug,
+                    int(snippet.draft),
                 ),
             )
 
@@ -326,6 +335,7 @@ class SnippetDatabase:
         end: Optional[datetime] = None,
         status: Optional[str] = None,
         method: Optional[str] = None,
+        include_drafts: bool = False,
     ) -> list[Snippet]:
         """List snippet records with filters.
 
@@ -351,6 +361,9 @@ class SnippetDatabase:
         """
         query = "SELECT * FROM snippets WHERE 1=1"
         params = []
+
+        if not include_drafts:
+            query += " AND draft = 0"
 
         if start:
             query += " AND created_at >= ?"
@@ -406,7 +419,7 @@ class SnippetDatabase:
 
             return cursor.rowcount > 0
 
-    def search_snippets(self, query: str, limit: int = 100) -> list[Snippet]:
+    def search_snippets(self, query: str, limit: int = 100, include_drafts: bool = False) -> list[Snippet]:
         """Search snippet records using full-text search.
 
         Parameters
@@ -423,19 +436,27 @@ class SnippetDatabase:
         """
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute(
-                """
+            sql = """
                 SELECT r.* FROM snippets r
                 JOIN snippets_fts fts ON r.rowid = fts.rowid
                 WHERE snippets_fts MATCH ?
-                ORDER BY r.created_at DESC
-                LIMIT ?
-                """,
-                (query, limit),
-            )
+            """
+            if not include_drafts:
+                sql += " AND r.draft = 0"
+            sql += " ORDER BY r.created_at DESC LIMIT ?"
+            cursor.execute(sql, (query, limit))
             rows = cursor.fetchall()
 
             return [self._row_to_snippet(dict(row)) for row in rows]
+
+    def delete_stale_drafts(self, older_than_hours: float) -> int:
+        """Delete private drafts that have not been touched within the retention window."""
+        cutoff = (datetime.now(timezone.utc) - timedelta(hours=older_than_hours)).isoformat()
+        with self._get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM snippets WHERE draft = 1 AND updated_at < ?", (cutoff,))
+            conn.commit()
+            return cursor.rowcount
 
     def create_visualization(
         self,
@@ -445,6 +466,9 @@ class SnippetDatabase:
         readme: str = "",
         method: Literal["inline", "server", "pyodide"] = "inline",
         skip_validation: bool = False,
+        execute: bool = True,
+        format: bool = True,
+        draft: bool = False,
     ) -> Snippet:
         """Create a visualization request.
 
@@ -511,11 +535,12 @@ class SnippetDatabase:
             if method == "server":
                 validate_extension_availability(app)
 
-            # Format before storage and runtime execution
-            app = ruff_format(app)
+            if format:
+                app = ruff_format(app)
 
-            # Layer 5 — Runtime execution (threaded, stores error but does not block)
-            validation_result = validate_code(app)
+            if execute:
+                # Layer 5 — Runtime execution (threaded, stores error but does not block)
+                validation_result = validate_code(app)
 
         # Infer requirements and extensions
         requirements = find_requirements(app)
@@ -530,8 +555,9 @@ class SnippetDatabase:
             method=method,
             requirements=requirements,
             extensions=extensions,
-            status="success" if not validation_result else "error",
+            status=("success" if not validation_result else "error") if execute else "pending",
             error_message=validation_result if validation_result else None,
+            draft=draft,
         )
 
         snippet_saved = self.create_snippet(snippet_obj)
@@ -562,6 +588,7 @@ class SnippetDatabase:
             user=row.get("user", "guest"),
             tags=json.loads(row["tags"]) if row.get("tags") else [],
             slug=row.get("slug", ""),
+            draft=bool(row.get("draft", 0)),
         )
 
 

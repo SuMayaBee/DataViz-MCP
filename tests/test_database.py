@@ -136,6 +136,28 @@ class TestSnippetDatabase:
         assert len(results) >= 1
         assert any("pandas" in r.app.lower() or "pandas" in r.name.lower() for r in results)
 
+    def test_private_drafts_are_hidden_from_lists_and_search(self, temp_db):
+        shown = Snippet(app="import pandas", name="Shown", method="inline")
+        draft = Snippet(app="import pandas", name="Private", method="inline", draft=True)
+        temp_db.create_snippet(shown)
+        temp_db.create_snippet(draft)
+
+        assert [snippet.id for snippet in temp_db.list_snippets()] == [shown.id]
+        assert {snippet.id for snippet in temp_db.list_snippets(include_drafts=True)} == {shown.id, draft.id}
+        assert {snippet.id for snippet in temp_db.search_snippets("pandas")} == {shown.id}
+        assert {snippet.id for snippet in temp_db.search_snippets("pandas", include_drafts=True)} == {shown.id, draft.id}
+
+    def test_draft_can_wait_for_browser_rendering(self, temp_db):
+        draft = temp_db.create_visualization(
+            app="x = 1",
+            method="inline",
+            execute=False,
+            format=False,
+            draft=True,
+        )
+        assert draft.status == "pending"
+        assert draft.draft is True
+
     def test_create_visualization_with_pyodide_method(self, temp_db):
         """Pyodide execution method is accepted and persisted."""
         snippet = temp_db.create_visualization(
