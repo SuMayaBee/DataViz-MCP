@@ -4,6 +4,7 @@ This module implements Tornado RequestHandler classes that provide
 HTTP endpoints for creating visualizations and checking server health.
 """
 
+import base64
 import json
 import logging
 import sys
@@ -111,7 +112,7 @@ def _local_host(host: str) -> str:
 
 
 class ScreenshotEndpoint(RequestHandler):
-    """Render a snippet's ``/view`` page to a PNG via GET /api/screenshot?id=...
+    """Render a snippet's ``/view`` page via GET /api/screenshot?id=...
 
     Loads the live ``/view`` page in a headless browser (Playwright) and returns
     a PNG, giving LLMs a picture of the *rendered* output — layout, fonts, and
@@ -129,24 +130,24 @@ class ScreenshotEndpoint(RequestHandler):
         Capture the full scrollable page rather than just the viewport.
     """
 
+    def _error(self, status: int, message: str, error: str | None = None) -> None:
+        self.set_status(status)
+        self.set_header("Content-Type", "application/json")
+        self.write({"error": error or message, "message": message})
+
     async def get(self):
-        """Capture and return the snippet identified by ``?id=`` as a PNG."""
-        from dataviz_mcp.screenshot import PlaywrightUnavailableError
-        from dataviz_mcp.screenshot import capture_png
+        """Capture and return the snippet identified by ``?id=``."""
+        from dataviz_mcp import screenshot
 
         snippet_id = self.get_argument("id", "")
         if not snippet_id:
-            self.set_status(400)
-            self.set_header("Content-Type", "application/json")
-            self.write({"error": "Missing 'id' parameter"})
+            self._error(400, "Missing 'id' parameter")
             return
 
         db = get_db()
         snippet = db.get_snippet(snippet_id)
         if not snippet:
-            self.set_status(404)
-            self.set_header("Content-Type", "application/json")
-            self.write({"error": f"Snippet {snippet_id} not found"})
+            self._error(404, f"Snippet {snippet_id} not found")
             return
 
         config = get_config()
@@ -154,29 +155,37 @@ class ScreenshotEndpoint(RequestHandler):
             width = int(self.get_argument("width", str(config.screenshot_width)))
             height = int(self.get_argument("height", str(config.screenshot_height)))
         except ValueError:
-            self.set_status(400)
-            self.set_header("Content-Type", "application/json")
-            self.write({"error": "width and height must be integers"})
+            self._error(400, "width and height must be integers")
             return
         full_page = self.get_argument("full_page", "false").lower() in ("1", "true", "yes")
+        raw_do = self.get_argument("do", "")
+        try:
+            do = json.loads(raw_do) if raw_do else None
+        except ValueError:
+            self._error(400, 'do must be JSON-encoded, e.g. do=[{"click": "Reports"}]', error="ActionError")
+            return
 
         view_url = f"http://{_local_host(config.host)}:{config.port}/view?id={snippet_id}"
 
         try:
             console_lines: list[str] = []
-            png = await capture_png(
+            capture = await screenshot.capture_pages(
                 view_url,
                 width=width,
                 height=height,
                 full_page=full_page,
                 settle_ms=config.screenshot_settle_ms,
                 timeout_ms=config.screenshot_timeout_ms,
+                do=do,
+                max_tiles=config.screenshot_max_tiles,
+                max_actions=config.screenshot_max_actions,
                 console_sink=console_lines,
             )
-        except PlaywrightUnavailableError as e:
-            self.set_status(503)
-            self.set_header("Content-Type", "application/json")
-            self.write({"error": "PlaywrightUnavailable", "message": str(e)})
+        except screenshot.PlaywrightUnavailableError as e:
+            self._error(503, str(e), error="PlaywrightUnavailable")
+            return
+        except screenshot.ActionError as e:
+            self._error(400, str(e), error="ActionError")
             return
         except Exception as e:
             logger.exception(f"Error capturing screenshot for snippet {snippet_id}")
@@ -185,12 +194,17 @@ class ScreenshotEndpoint(RequestHandler):
             self.write({"error": str(e), "traceback": traceback.format_exc()})
             return
 
-        self.set_status(200)
-        self.set_header("Content-Type", "image/png")
         payload = diagnostics.build(diagnostics.pop(snippet_id), console_lines)
         if payload:
             self.set_header(diagnostics.HEADER, diagnostics.encode(payload))
-        self.write(png)
+        self.set_header(screenshot.META_HEADER, screenshot.encode_meta(capture))
+        self.set_status(200)
+        if len(capture.images) > 1:
+            self.set_header("Content-Type", "application/json")
+            self.write({"images": [{"label": label, "png": base64.b64encode(png).decode("ascii")} for label, png in capture.images]})
+        else:
+            self.set_header("Content-Type", "image/png")
+            self.write(capture.png or b"")
 
 
 class HealthEndpoint(RequestHandler):

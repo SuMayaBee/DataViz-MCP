@@ -593,6 +593,7 @@ async def screenshot(
     width: int = 1200,
     height: int = 800,
     full_page: bool = False,
+    do: list[dict] | None = None,
     ctx: Context | None = None,
 ) -> ToolResult:
     """See an EXISTING visualization — returns a PNG image of it to you (the LLM).
@@ -661,8 +662,11 @@ async def screenshot(
     height : int, default 800
         Browser viewport height in pixels.
     full_page : bool, default False
-        If ``True``, capture the full scrollable page rather than just the
-        viewport. Useful for tall dashboards.
+        If ``True``, capture the full scrollable page as up to four readable
+        viewport-sized images rather than one very tall image.
+    do : list[dict], optional
+        Browser actions to run before capturing, such as ``{"click": "Sales"}``,
+        ``{"select": "Region", "value": "West"}``, or ``{"drag": [10, 20, 300, 400]}``.
 
     Returns
     -------
@@ -674,10 +678,10 @@ async def screenshot(
 
     # Capture the existing snippet's rendered /view page as a PNG.
     # The endpoint 404s if the id is unknown.
-    png, error, captured = await asyncio.to_thread(_client.get_screenshot, snippet_id, width, height, full_page)
+    capture, error, captured = await asyncio.to_thread(_client.get_screenshot, snippet_id, width, height, full_page, do)
     if error:
         raise ToolError(f"Screenshot failed: {error}")
-    if not png:
+    if not capture or not capture.images:
         raise ToolError("Screenshot capture returned no image data.")
 
     reminder = (
@@ -688,7 +692,14 @@ async def screenshot(
         "Do NOT recompute from raw data — rendered output and raw data frequently disagree "
         "(row order, axis inversion, sorting, binning)."
     )
-    content = [Image(data=png, format="png").to_image_content()]
+    content = [Image(data=png, format="png").to_image_content() for _, png in capture.images]
+    report = []
+    if capture.controls:
+        report.append("Controls found: " + ", ".join(capture.controls) + ".")
+    if capture.total_tiles > capture.captured_tiles:
+        report.append(f"This page needs {capture.total_tiles} screens; {capture.captured_tiles} were captured.")
+    if report:
+        content.append(TextContent(type="text", text="\n".join(report)))
     if output := diagnostics.render(captured):
         content.append(TextContent(type="text", text=f"--- output ---\n{output}"))
     content.append(TextContent(type="text", text=reminder))
