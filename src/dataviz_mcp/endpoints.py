@@ -195,8 +195,96 @@ class ScreenshotEndpoint(RequestHandler):
             return
 
         payload = diagnostics.build(diagnostics.pop(snippet_id), console_lines)
-        if payload:
-            self.set_header(diagnostics.HEADER, diagnostics.encode(payload))
+        self._write_capture(capture, diagnostics.encode(payload) if payload else "")
+
+    async def post(self):
+        """Render submitted code privately and return its screenshot plus draft id."""
+        from dataviz_mcp import screenshot
+
+        try:
+            body = json.loads(self.request.body.decode("utf-8"))
+        except ValueError:
+            self._error(400, "Request body must be JSON")
+            return
+        code = body.get("code", "")
+        if not code:
+            self._error(400, "Missing 'code' in request body")
+            return
+
+        db = get_db()
+        try:
+            db.delete_stale_drafts(get_config().draft_retention_hours)
+            draft = db.create_visualization(
+                app=code,
+                name=body.get("name", ""),
+                description=body.get("description", ""),
+                method=body.get("method", "inline"),
+                execute=False,
+                format=False,
+                draft=True,
+            )
+        except SyntaxError as e:
+            self._error(400, str(e), error="SyntaxError")
+            return
+        except SecurityError as e:
+            self._error(400, str(e), error="SecurityError")
+            return
+        except ValueError as e:
+            self._error(400, str(e), error="ValueError")
+            return
+
+        config = get_config()
+        try:
+            width = int(body.get("width") or config.screenshot_width)
+            height = int(body.get("height") or config.screenshot_height)
+        except (TypeError, ValueError):
+            db.delete_snippet(draft.id)
+            self._error(400, "width and height must be integers")
+            return
+        view_url = f"http://{_local_host(config.host)}:{config.port}/view?id={draft.id}"
+        console_lines: list[str] = []
+        try:
+            capture = await screenshot.capture_pages(
+                view_url,
+                width=width,
+                height=height,
+                full_page=bool(body.get("full_page", False)),
+                settle_ms=config.screenshot_settle_ms,
+                timeout_ms=config.screenshot_timeout_ms,
+                do=body.get("do"),
+                max_tiles=config.screenshot_max_tiles,
+                max_actions=config.screenshot_max_actions,
+                console_sink=console_lines,
+            )
+        except screenshot.PlaywrightUnavailableError as e:
+            db.delete_snippet(draft.id)
+            self._error(503, str(e), error="PlaywrightUnavailable")
+            return
+        except screenshot.ActionError as e:
+            db.delete_snippet(draft.id)
+            self._error(400, str(e), error="ActionError")
+            return
+        except Exception as e:
+            logger.exception("Error capturing private draft %s", draft.id)
+            db.delete_snippet(draft.id)
+            self._error(500, str(e), error="InternalError")
+            return
+
+        rendered = db.get_snippet(draft.id)
+        if rendered is not None and rendered.status == "error":
+            db.delete_snippet(draft.id)
+            self._error(400, rendered.error_message or "The draft failed to render.", error="RuntimeError")
+            return
+        payload = diagnostics.build(diagnostics.pop(draft.id), console_lines)
+        self.set_header(diagnostics.DRAFT_ID_HEADER, draft.id)
+        self._write_capture(capture, diagnostics.encode(payload) if payload else "")
+
+    def _write_capture(self, capture, diagnostics_header: str) -> None:
+        """Write one PNG or a JSON tile list, plus screenshot metadata headers."""
+        from dataviz_mcp import screenshot
+
+        if diagnostics_header:
+            self.set_header(diagnostics.HEADER, diagnostics_header)
         self.set_header(screenshot.META_HEADER, screenshot.encode_meta(capture))
         self.set_status(200)
         if len(capture.images) > 1:

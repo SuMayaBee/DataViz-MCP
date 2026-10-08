@@ -158,6 +158,57 @@ class DisplayClient:
         logger.warning("Screenshot failed (HTTP %s) for snippet %s: %s", response.status_code, snippet_id, message)
         return None, message, {}
 
+    def screenshot_code(
+        self,
+        code: str,
+        name: str = "",
+        description: str = "",
+        method: str = "inline",
+        width: int | None = None,
+        height: int | None = None,
+        full_page: bool = False,
+        do: list | None = None,
+    ) -> tuple[screenshot.Capture | None, str | None, dict[str, str], str]:
+        """Render code as a private draft and return its image and retained id."""
+        payload: dict[str, str | int | bool | list | None] = {
+            "code": code,
+            "name": name,
+            "description": description,
+            "method": method,
+            "full_page": full_page,
+            "do": do,
+        }
+        if width:
+            payload["width"] = width
+        if height:
+            payload["height"] = height
+        try:
+            response = self.session.post(f"{self.base_url}/api/screenshot", json=payload, timeout=max(self.timeout, 60))
+        except requests.RequestException as e:
+            return None, f"Screenshot request failed: {e}", {}, ""
+
+        if response.status_code == 200:
+            meta = screenshot.decode_meta(response.headers.get(screenshot.META_HEADER, ""))
+            notes = diagnostics.decode(response.headers.get(diagnostics.HEADER, ""))
+            draft_id = response.headers.get(diagnostics.DRAFT_ID_HEADER, "")
+            content_type = response.headers.get("Content-Type", "")
+            if "image/png" in content_type:
+                capture = screenshot.apply_meta(screenshot.Capture(images=[("", response.content)]), meta)
+                return capture, None, notes, draft_id
+            if "application/json" in content_type:
+                try:
+                    images = [(item.get("label", ""), base64.b64decode(item["png"])) for item in response.json()["images"]]
+                except Exception as e:
+                    return None, f"Malformed multi-image screenshot response: {e}", {}, ""
+                return screenshot.apply_meta(screenshot.Capture(images=images), meta), None, notes, draft_id
+
+        try:
+            body = response.json()
+            message = body.get("message") or body.get("error") or response.text
+        except ValueError:
+            message = response.text or f"HTTP {response.status_code}"
+        return None, message, {}, ""
+
     def close(self) -> None:
         """Close the HTTP session and cleanup resources."""
         if self.session:
