@@ -23,6 +23,8 @@ async def test_list_tools():
         tool_names = {t.name for t in tools}
         assert "show" in tool_names
         assert "screenshot" in tool_names
+        assert "edit" in tool_names
+        assert "evaluate" in tool_names
         # list_packages was removed as an MCP tool (issue #29); the `pls list
         # packages` CLI command remains for humans.
         assert "list_packages" not in tool_names

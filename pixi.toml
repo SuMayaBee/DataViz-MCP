@@ -22,7 +22,7 @@ setuptools = ">=61"
 setuptools-scm = "*"
 
 [pypi-dependencies]
-fastmcp = ">=3.0"
+fastmcp = ">=3.0,<4.0"
 panel-material-ui = "*"
 playwright = "*"
 
