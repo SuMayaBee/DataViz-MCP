@@ -22,6 +22,7 @@ async def test_list_tools():
         tools = await client.list_tools()
         tool_names = {t.name for t in tools}
         assert "show" in tool_names
+        assert "load_data" in tool_names
         assert "screenshot" in tool_names
         assert "edit" in tool_names
         assert "evaluate" in tool_names

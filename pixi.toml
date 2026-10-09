@@ -18,6 +18,8 @@ hatch-vcs = "*"
 panel = ">=1.5.0"
 holoviews = ">=1.19"
 hvplot = ">=0.10"
+datashader = ">=0.16"
+pandas = ">=2.0"
 setuptools = ">=61"
 setuptools-scm = "*"
 

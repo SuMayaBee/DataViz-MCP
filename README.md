@@ -19,6 +19,7 @@ assistants to display and inspect Python outputs in real time.
 - **Any visualization library** — hvplot · plotly · altair · matplotlib · seaborn · holoviews · bokeh · and more
 - **Validate before render** — `show` runs syntax, security, package, and extension checks before any rendering happens
 - **Visual validation** — `screenshot` MCP tool lets the AI inspect the rendered output visually before presenting it
+- **Adaptive data loading** — `load_data` detects remote, large, multidimensional, and simple tabular data, then selects hvPlot, HoloViews, or Datashader automatically
 - **Persistent storage** — SQLite database with full-text search; every snippet gets its own permanent URL
 - **Auto-restart** — Panel subprocess is health-monitored and automatically restarted on failure
 - **Works everywhere** — local, JupyterHub, GitHub Codespaces; URLs externalized automatically
@@ -65,6 +66,11 @@ For a safe visual iteration loop, use `screenshot(code=...)` to review a private
 draft, use `edit(...)` for small source changes, then call `show(draft_id=...)`
 to publish exactly the reviewed result. Use `evaluate(code=...)` for text-only
 Python checks that do not need a rendered visualization.
+
+To load and visualize tabular data automatically, ask the assistant to call
+`load_data(source=...)` with a local CSV, JSON, JSONL, NDJSON, or Parquet path,
+or an HTTP(S) URL. The tool profiles the data and selects hvPlot for simple or
+remote data, HoloViews for multidimensional data, and Datashader for large data.
 
 ```
 $ pls

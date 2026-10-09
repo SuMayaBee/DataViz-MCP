@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Literal
 from urllib.parse import urlparse
 
+import requests
 from fastmcp import Context
 from fastmcp import FastMCP
 from fastmcp.exceptions import ToolError
@@ -28,6 +29,10 @@ from mcp.types import TextContent
 from dataviz_mcp import diagnostics
 from dataviz_mcp.client import DisplayClient
 from dataviz_mcp.config import get_config
+from dataviz_mcp.data_loader import BIG_DATA_ROWS
+from dataviz_mcp.data_loader import build_visualization_code
+from dataviz_mcp.data_loader import load_dataframe
+from dataviz_mcp.data_loader import profile_dataframe
 from dataviz_mcp.manager import PanelServerManager
 from dataviz_mcp.prompts import render as render_prompt
 from dataviz_mcp.utils import ExtensionError
@@ -332,7 +337,9 @@ mcp = FastMCP(
         "DataViz MCP executes Python code snippets and renders the resulting "
         "visualizations as live, interactive web pages.\n\n"
         "WORKFLOW:\n"
-        "Call `show(code, name, method)` to render a visualization.\n"
+        "Call `load_data(source, name)` when the user provides a local data file or remote data URL; "
+        "it profiles the dataset and automatically chooses hvPlot, HoloViews, or Datashader.\n"
+        "Call `show(code, name, method)` to render a custom visualization.\n"
         "Static validation (syntax, security, packages) runs in ~50 ms.\n"
         "The iframe loads immediately via Panel's WebSocket — no prior validate() needed.\n\n"
         "DO NOT write the visualization code to a file, script, notebook, or `examples/`\n"
@@ -359,8 +366,9 @@ mcp = FastMCP(
         "`show` raises `SecurityError` for blocked imports or dangerous patterns — "
         "these require a substantive code rewrite, not a retry. "
         "`show` raises `ValidationError` for syntax errors, missing packages, or "
-        "missing Panel extension declarations — fix the reported issue and try again."
-    , "instructions"),
+        "missing Panel extension declarations — fix the reported issue and try again.",
+        "instructions",
+    ),
     lifespan=app_lifespan,
 )
 
@@ -456,8 +464,9 @@ async def show(
     immediately via Panel's WebSocket — the user sees a loading indicator then
     the rendered visualization, with no prior ``validate()`` call needed.
 
-    Always call this tool when the user asks to show, display, plot, or
-    visualize anything.
+    Call this tool when the user asks to show, display, plot, or visualize a
+    custom result from Python code. When the user instead supplies a local data
+    file or remote data URL and wants automatic selection, call ``load_data``.
 
     IMPORTANT — pass the Python code DIRECTLY as the ``code`` argument. Do NOT
     write it to a file in the user's project first, do NOT create scripts,
@@ -590,6 +599,83 @@ async def show(
         return _retry("render", f"{e!s}. Check that the Panel server is running and the code is valid Python.")
 
 
+@mcp.tool(name="load_data", app=AppConfig(resource_uri=SHOW_RESOURCE_URI))
+async def load_data(
+    source: str,
+    name: str = "",
+    description: str = "",
+    big_data_rows: int = BIG_DATA_ROWS,
+    zoom: int = 75,
+    ctx: Context | None = None,
+) -> str:
+    """Load tabular data, identify its type, and render a suitable plot.
+
+    Use this tool when the user supplies a local file path or an HTTP(S) URL
+    rather than visualization code. It supports CSV, JSON, JSONL, NDJSON, and
+    Parquet data. The tool inspects the actual dataset and chooses a strategy:
+
+    - remote data: a standard hvPlot chart
+    - large local data: a Datashader-backed plot
+    - local data with at least three numeric dimensions: a HoloViews plot
+    - other local data: a standard hvPlot chart
+
+    The response includes the detected category, dataset shape, selected
+    columns, and rendering strategy together with the normal visualization URL.
+
+    Parameters
+    ----------
+    source : str
+        Local file path or HTTP(S) URL for a supported tabular dataset.
+    name : str, optional
+        Display name. Defaults to the source filename.
+    description : str, optional
+        One-sentence description shown with the visualization.
+    big_data_rows : int, default 100000
+        Row count at which a local dataset uses Datashader. Values below 1000
+        are clamped to 1000 to avoid accidental misclassification.
+    zoom : {100, 75, 50, 25}, default 75
+        Initial preview zoom.
+
+    Returns
+    -------
+    str
+        JSON payload containing the visualization URL and data profile.
+    """
+    if not source.strip():
+        raise ToolError("Provide a local data file path or an HTTP(S) data URL.")
+
+    try:
+        frame, source_kind = await asyncio.to_thread(load_dataframe, source)
+        if frame.empty:
+            raise ValueError("The dataset is empty.")
+        profile = profile_dataframe(frame, source_kind, max(1_000, big_data_rows))
+        display_name = name.strip() or Path(urlparse(source).path).stem or "Loaded data"
+        code = build_visualization_code(source, frame, profile, display_name)
+    except (OSError, ValueError, requests.RequestException) as exc:
+        raise ToolError(f"Could not load data: {exc}") from exc
+
+    rendered = await show(
+        code=code,
+        name=display_name,
+        description=description or f"Automatically selected {profile.strategy} for {profile.category.replace('_', ' ')}.",
+        method="inline",
+        zoom=zoom,
+        ctx=ctx,
+    )
+    payload = json.loads(rendered)
+    payload["tool"] = "load_data"
+    payload["source"] = source
+    payload["data_profile"] = profile.to_dict()
+    payload["message"] = (
+        f"Loaded {profile.rows:,} rows and {profile.columns} columns; detected {profile.category.replace('_', ' ')} and selected {profile.strategy}."
+        if payload.get("status") == "success"
+        else payload.get("message", "Visualization failed.")
+    )
+    payload.pop("tokens", None)
+    _attach_token_count(payload)
+    return json.dumps(payload)
+
+
 @mcp.tool(name="screenshot")
 async def screenshot(
     snippet_id: str = "",
@@ -696,9 +782,7 @@ async def screenshot(
         validation = _run_validation(code, method)
         if not validation["valid"]:
             raise ToolError(f"Private draft validation failed [{validation['layer']}]: {validation['message']}")
-        capture, error, captured, draft_id = await asyncio.to_thread(
-            _client.screenshot_code, code, name, description, method, width, height, full_page, do
-        )
+        capture, error, captured, draft_id = await asyncio.to_thread(_client.screenshot_code, code, name, description, method, width, height, full_page, do)
     else:
         capture, error, captured = await asyncio.to_thread(_client.get_screenshot, snippet_id, width, height, full_page, do)
 
@@ -709,12 +793,12 @@ async def screenshot(
 
     reminder = render_prompt(
         (
-        "IMAGE QUALITY CHECK — before answering:\n"
-        "· Blurry, pixelated, or clipped? → answer from the code/data instead.\n"
-        "· Text/labels too small to read confidently? → answer from the code/data instead.\n"
-        "· Image is clear and complete? → answer from THIS image only. "
-        "Do NOT recompute from raw data — rendered output and raw data frequently disagree "
-        "(row order, axis inversion, sorting, binning)."
+            "IMAGE QUALITY CHECK — before answering:\n"
+            "· Blurry, pixelated, or clipped? → answer from the code/data instead.\n"
+            "· Text/labels too small to read confidently? → answer from the code/data instead.\n"
+            "· Image is clear and complete? → answer from THIS image only. "
+            "Do NOT recompute from raw data — rendered output and raw data frequently disagree "
+            "(row order, axis inversion, sorting, binning)."
         ),
         "screenshot",
     )
@@ -753,8 +837,8 @@ async def edit(snippet_id: str, old_str: str, new_str: str = "", ctx: Context | 
         return f"Edit not applied: {message}"
     new_id = result.get("id", snippet_id)
     if result.get("forked"):
-        return f"Created private draft {new_id}; the shown visualization {snippet_id} is unchanged. Review it, then call show(draft_id=\"{new_id}\") when ready."
-    return f"Updated private draft {new_id} ({result.get('chars', 0)} characters). Call show(draft_id=\"{new_id}\") when ready."
+        return f'Created private draft {new_id}; the shown visualization {snippet_id} is unchanged. Review it, then call show(draft_id="{new_id}") when ready.'
+    return f'Updated private draft {new_id} ({result.get("chars", 0)} characters). Call show(draft_id="{new_id}") when ready.'
 
 
 @mcp.tool(name="evaluate")

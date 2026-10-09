@@ -29,11 +29,14 @@ Ask your AI assistant:
 
 > List your available MCP tools.
 
-You should see two tools in the response:
+You should see these core tools in the response:
 
+- `load_data`: loads tabular data, detects its type, and selects a plotting strategy
 - `show`: validates the code, renders the visualization, and returns a live URL
 - `screenshot`: takes a picture of an already-rendered visualization so the AI can answer
   questions about how it looks
+- `edit`: applies a focused change to an existing visualization draft
+- `evaluate`: runs a text-only calculation without creating a visualization
 
 ---
 
@@ -42,9 +45,10 @@ You should see two tools in the response:
 Download the [Palmer Penguins dataset](https://raw.githubusercontent.com/mcnakhaee/palmerpenguins/master/palmerpenguins/data/penguins.csv)
 and save it as `penguins.csv`. Then ask your AI:
 
-> My dataset is penguins.csv. Show the distribution of the 'species' column as an interactive bar chart. Use the show tool.
+> Load penguins.csv and visualize it automatically. Use the load_data tool.
 
-Your AI will call `show`, which validates the code and then renders it in one step.
+Your AI will call `load_data`, which profiles the dataset, selects a suitable HoloViz
+strategy, validates the generated code, and renders it in one step.
 You'll see a response like:
 
 ```
