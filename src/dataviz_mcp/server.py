@@ -47,6 +47,25 @@ logger = logging.getLogger(__name__)
 
 SHOW_RESOURCE_URI = "ui://dataviz-mcp/show.html"
 SHOW_TEMPLATE_PATH = Path(__file__).parent / "templates" / "show.html"
+PLOTTING_SKILL_RESOURCE_URI = "skill://dataviz-mcp/plot-selection"
+
+
+def _load_plotting_skill() -> str:
+    """Load the packaged plot-selection skill without its YAML frontmatter."""
+    candidates = (
+        Path(__file__).parent / "skills" / "dataviz-plot-selection" / "SKILL.md",
+        Path(__file__).parents[2] / "skills" / "dataviz-plot-selection" / "SKILL.md",
+    )
+    for path in candidates:
+        if path.is_file():
+            text = path.read_text(encoding="utf-8")
+            parts = text.split("---", 2)
+            return parts[2].strip() if len(parts) == 3 else text.strip()
+    logger.warning("The dataviz-plot-selection skill could not be loaded")
+    return "Choose a chart from the analytical question, data types, and dataset scale; verify the rendered result with screenshot."
+
+
+_PLOTTING_SKILL = _load_plotting_skill()
 
 # Global instances
 _manager: PanelServerManager | None = None
@@ -366,7 +385,8 @@ mcp = FastMCP(
         "`show` raises `SecurityError` for blocked imports or dangerous patterns — "
         "these require a substantive code rewrite, not a retry. "
         "`show` raises `ValidationError` for syntax errors, missing packages, or "
-        "missing Panel extension declarations — fix the reported issue and try again.",
+        "missing Panel extension declarations — fix the reported issue and try again.\n\n"
+        "PLOT-SELECTION SKILL (apply this whenever creating a plot):\n" + _PLOTTING_SKILL,
         "instructions",
     ),
     lifespan=app_lifespan,
@@ -417,6 +437,12 @@ def _build_frame_domains() -> list[str]:
 def show_view() -> str:
     """Return the HTML resource used by the show MCP App."""
     return SHOW_TEMPLATE_PATH.read_text(encoding="utf-8")
+
+
+@mcp.resource(PLOTTING_SKILL_RESOURCE_URI)
+def plotting_skill() -> str:
+    """Return the plot-selection skill used by the MCP server instructions."""
+    return _PLOTTING_SKILL
 
 
 # --- Tools ---

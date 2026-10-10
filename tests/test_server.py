@@ -34,6 +34,13 @@ async def test_list_tools():
         assert "show_pyodide" not in tool_names
 
 
+def test_plot_selection_skill_is_loaded_into_server_instructions():
+    """Plot selection guidance ships with and actively configures the MCP server."""
+    assert "# DataViz Plot Selection" in server_module._PLOTTING_SKILL
+    assert "PLOT-SELECTION SKILL" in mcp.instructions
+    assert "Datashader" in mcp.instructions
+
+
 def test_packages_cli_lists_packages():
     """Test pls list packages prints installed packages."""
     runner = CliRunner()

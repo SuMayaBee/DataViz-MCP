@@ -190,3 +190,6 @@ check_untyped_defs = true
 [tool.hatch.version]
 source = "vcs"
 raw-options = { version_scheme = "no-guess-dev" }
+
+[tool.hatch.build.targets.wheel.force-include]
+"skills/dataviz-plot-selection" = "dataviz_mcp/skills/dataviz-plot-selection"

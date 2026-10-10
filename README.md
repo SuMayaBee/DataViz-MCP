@@ -72,6 +72,11 @@ To load and visualize tabular data automatically, ask the assistant to call
 or an HTTP(S) URL. The tool profiles the data and selects hvPlot for simple or
 remote data, HoloViews for multidimensional data, and Datashader for large data.
 
+The packaged [`dataviz-plot-selection`](skills/dataviz-plot-selection/SKILL.md)
+skill guides chart choice for trends, comparisons, distributions, relationships,
+composition, maps, multidimensional exploration, and dashboards. Its guidance is
+loaded into the MCP server instructions automatically whenever plots are created.
+
 ```
 $ pls
 

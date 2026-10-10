@@ -1,6 +1,6 @@
 ---
 name: dataviz-mcp
-description: Show Python visualizations live in the browser with the dataviz-mcp MCP tools (show, screenshot). Use when those tools are available and the user asks to display, plot, chart, or visualize anything. Do not use for apps the user serves themselves with `panel serve`.
+description: Load data and show Python visualizations live in the browser with the dataviz-mcp MCP tools (load_data, show, screenshot, edit, evaluate). Use when those tools are available and the user asks to inspect, display, plot, chart, or visualize data. Do not use for apps the user serves themselves with `panel serve`.
 metadata:
   version: "0.0.1"
   author: holoviz
