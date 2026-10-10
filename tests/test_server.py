@@ -22,6 +22,7 @@ async def test_list_tools():
         tools = await client.list_tools()
         tool_names = {t.name for t in tools}
         assert "show" in tool_names
+        assert "load_data" in tool_names
         assert "screenshot" in tool_names
         assert "edit" in tool_names
         assert "evaluate" in tool_names
@@ -31,6 +32,20 @@ async def test_list_tools():
         assert "validate" not in tool_names
         assert "render" not in tool_names
         assert "show_pyodide" not in tool_names
+
+
+def test_plot_selection_skill_is_loaded_into_server_instructions():
+    """Plot selection guidance ships with and actively configures the MCP server."""
+    assert "# DataViz Plot Selection" in server_module._PLOTTING_SKILL
+    assert "PLOT-SELECTION SKILL" in mcp.instructions
+    assert "Datashader" in mcp.instructions
+
+
+def test_show_app_handles_data_only_inspection_payloads():
+    """The MCP App presents inspection results instead of treating them as errors."""
+    template = server_module.SHOW_TEMPLATE_PATH.read_text(encoding="utf-8")
+    assert "parsedPayload.visualized === false" in template
+    assert "Possible visualizations:" in template
 
 
 def test_packages_cli_lists_packages():

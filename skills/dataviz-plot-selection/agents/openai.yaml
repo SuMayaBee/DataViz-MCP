@@ -1,0 +1,4 @@
+interface:
+  display_name: "DataViz Plot Selection"
+  short_description: "Choose clear plots for each analytical use case"
+  default_prompt: "Use $dataviz-plot-selection to choose and render the clearest visualization for this dataset and question."

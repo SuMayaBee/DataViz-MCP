@@ -29,22 +29,39 @@ Ask your AI assistant:
 
 > List your available MCP tools.
 
-You should see two tools in the response:
+You should see these core tools in the response:
 
+- `load_data`: loads tabular data, detects its type, and selects a plotting strategy
 - `show`: validates the code, renders the visualization, and returns a live URL
 - `screenshot`: takes a picture of an already-rendered visualization so the AI can answer
   questions about how it looks
+- `edit`: applies a focused change to an existing visualization draft
+- `evaluate`: runs a text-only calculation without creating a visualization
 
 ---
 
-## Step 3: Create your first AI-assisted visualization
+## Step 3: Inspect data without creating a plot
 
 Download the [Palmer Penguins dataset](https://raw.githubusercontent.com/mcnakhaee/palmerpenguins/master/palmerpenguins/data/penguins.csv)
-and save it as `penguins.csv`. Then ask your AI:
+and save it as `penguins.csv`. Then ask:
 
-> My dataset is penguins.csv. Show the distribution of the 'species' column as an interactive bar chart. Use the show tool.
+> Inspect penguins.csv. Tell me about its structure and data quality, and recommend useful visualizations. Do not create a plot yet.
 
-Your AI will call `show`, which validates the code and then renders it in one step.
+The assistant calls `load_data(source="penguins.csv", visualize=False)`. You receive the
+dataset shape, column types, missing and duplicate counts, numeric statistics, five preview
+records, and recommendations explaining which columns and plotting libraries fit each view.
+Nothing is stored in the visualization feed.
+
+---
+
+## Step 4: Create your first AI-assisted visualization
+
+Now ask your AI:
+
+> Load penguins.csv and visualize it automatically. Use the load_data tool.
+
+Your AI will call `load_data`, which profiles the dataset, selects a suitable HoloViz
+strategy, validates the generated code, and renders it in one step.
 You'll see a response like:
 
 ```
@@ -64,7 +81,7 @@ Click the URL (or the inline MCP App panel if your client supports it) to see th
 
 ---
 
-## Step 4: Explore relationships
+## Step 5: Explore relationships
 
 Continue the conversation:
 
@@ -75,7 +92,7 @@ zoom, and pan.
 
 ---
 
-## Step 5: Ask a follow-up question about how it looks
+## Step 6: Ask a follow-up question about how it looks
 
 Now ask something that can only be answered by looking at the chart, not by reading the code:
 
@@ -92,7 +109,7 @@ just created, gets back a picture of the rendered chart, and reads the answer of
 
 ---
 
-## Step 6: Build an interactive dashboard
+## Step 7: Build an interactive dashboard
 
 Ask the AI to create a full Panel application:
 
@@ -103,7 +120,7 @@ The dashboard updates in real time as you interact with it.
 
 ---
 
-## Step 7: Iterate
+## Step 8: Iterate
 
 If the result isn't what you expected, continue the conversation:
 
@@ -116,7 +133,7 @@ Each message creates a new visualization. Previous ones remain accessible at the
 
 ---
 
-## Step 8: Check what packages are available
+## Step 9: Check what packages are available
 
 The AI cannot install packages itself, and is instructed to prefer HoloViz packages (hvPlot,
 HoloViews, Panel) and fall back to other well-known libraries only when needed — so you rarely

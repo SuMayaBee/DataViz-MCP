@@ -19,6 +19,7 @@ assistants to display and inspect Python outputs in real time.
 - **Any visualization library** — hvplot · plotly · altair · matplotlib · seaborn · holoviews · bokeh · and more
 - **Validate before render** — `show` runs syntax, security, package, and extension checks before any rendering happens
 - **Visual validation** — `screenshot` MCP tool lets the AI inspect the rendered output visually before presenting it
+- **Adaptive data loading** — `load_data` detects remote, large, multidimensional, and simple tabular data, then selects hvPlot, HoloViews, or Datashader automatically
 - **Persistent storage** — SQLite database with full-text search; every snippet gets its own permanent URL
 - **Auto-restart** — Panel subprocess is health-monitored and automatically restarted on failure
 - **Works everywhere** — local, JupyterHub, GitHub Codespaces; URLs externalized automatically
@@ -32,7 +33,7 @@ uv tool install "dataviz-mcp[pydata]"
 ```
 
 > **Pin your version** — this project is in its early stages. Pin to a specific version to avoid
-> unexpected changes: `uv tool install "dataviz-mcp[pydata]==0.1.0a1"`
+> unexpected changes: `uv tool install "dataviz-mcp[pydata]==0.3.0"`
 
 ## Connect to your AI assistant
 
@@ -65,6 +66,19 @@ For a safe visual iteration loop, use `screenshot(code=...)` to review a private
 draft, use `edit(...)` for small source changes, then call `show(draft_id=...)`
 to publish exactly the reviewed result. Use `evaluate(code=...)` for text-only
 Python checks that do not need a rendered visualization.
+
+To load and visualize tabular data automatically, ask the assistant to call
+`load_data(source=...)` with a local CSV, JSON, JSONL, NDJSON, or Parquet path,
+or an HTTP(S) URL. The tool profiles the data and selects hvPlot for simple or
+remote data, HoloViews for multidimensional data, and Datashader for large data.
+Set `visualize=False` when the request is only to inspect or understand the data;
+the same tool returns schema, quality statistics, a preview, and recommended chart
+types without creating a visualization or feed entry.
+
+The packaged [`dataviz-plot-selection`](skills/dataviz-plot-selection/SKILL.md)
+skill guides chart choice for trends, comparisons, distributions, relationships,
+composition, maps, multidimensional exploration, and dashboards. Its guidance is
+loaded into the MCP server instructions automatically whenever plots are created.
 
 ```
 $ pls

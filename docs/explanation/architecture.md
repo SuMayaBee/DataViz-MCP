@@ -22,7 +22,8 @@ pls serve, Panel Server (subprocess, port 5077)
 Browser, /view  /feed  /add  /admin
 ```
 
-**MCP Server** (`pls mcp`): Hosts the `show` and `screenshot` MCP tools. Starts the
+**MCP Server** (`pls mcp`): Hosts the `load_data`, `show`, `screenshot`, `edit`, and
+`evaluate` MCP tools. Starts the
 Panel server as a subprocess and manages its lifecycle.
 
 **Panel Server** (`pls serve`): Executes Python code and serves visualizations as web pages.
@@ -34,8 +35,26 @@ Exposes a REST API and four browser-accessible pages.
 
 ## MCP Tools
 
-The MCP server exposes two tools to the AI assistant, meant to be used together in a
-typical session.
+The MCP server exposes a focused set of tools to the AI assistant. They cover automatic
+data loading, custom rendering, visual inspection, targeted editing, and text-only evaluation.
+
+### `load_data`: profile data and choose a renderer
+
+`load_data` accepts a local CSV, JSON, JSONL, NDJSON, or Parquet path, or an HTTP(S)
+URL. It reads the dataset, reports its shape and detected column types, and creates a
+visualization without requiring the assistant to write plotting code. Remote and simple
+data use hvPlot, multidimensional local data uses HoloViews, and local datasets with at
+least 100,000 rows use Datashader-backed rasterization. The row threshold can be adjusted
+per call.
+
+For a data-only request, `load_data(source=..., visualize=False)` skips rendering and returns
+the schema, missing and duplicate counts, numeric statistics, a five-row preview, and chart
+recommendations. This inspection mode does not create a snippet or add anything to the feed.
+
+```python
+load_data(source="sales.csv", visualize=False)  # inspect and recommend only
+load_data(source="sales.csv", name="Sales overview", visualize=True)  # render automatically
+```
 
 The **assistant** cannot install packages. It writes code against whatever is already in the
 server environment, so the MCP server's instructions steer it toward **HoloViz packages**

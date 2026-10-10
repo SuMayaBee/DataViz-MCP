@@ -1,6 +1,6 @@
 ---
 name: dataviz-mcp
-description: Show Python visualizations live in the browser with the dataviz-mcp MCP tools (show, screenshot). Use when those tools are available and the user asks to display, plot, chart, or visualize anything. Do not use for apps the user serves themselves with `panel serve`.
+description: Load data and show Python visualizations live in the browser with the dataviz-mcp MCP tools (load_data, show, screenshot, edit, evaluate). Use when those tools are available and the user asks to inspect, display, plot, chart, or visualize data. Do not use for apps the user serves themselves with `panel serve`.
 metadata:
   version: "0.0.1"
   author: holoviz
@@ -18,6 +18,7 @@ come from writing a snippet as if it were a script.
 ## Contents
 
 - [Prefer HoloViz Libraries](#prefer-holoviz-libraries)
+- [Loading or Inspecting Data](#loading-or-inspecting-data)
 - [Choosing the Method](#choosing-the-method)
 - [Writing Snippets](#writing-snippets)
 - [Declaring Extensions](#declaring-extensions)
@@ -45,6 +46,20 @@ This is not tribal preference. hvPlot and HoloViews emit Bokeh, which renders na
 Panel websocket with no extra setup. Every other library needs a matching `pn.extension(...)`
 declaration and is subject to the substring trap described in
 [Declaring Extensions](#declaring-extensions).
+
+## Loading or Inspecting Data
+
+Use `load_data` for supported local or remote tabular sources instead of writing loading and
+profiling code by hand.
+
+- If the user asks only to inspect, summarize, describe, or understand the data, call
+  `load_data(source=..., visualize=False)`. Explain the returned schema, quality statistics,
+  preview, classification, and plot recommendations. Do not create a plot or feed entry.
+- If the user asks to plot, chart, show, or visualize the data automatically, call
+  `load_data(source=..., visualize=True)`. It selects hvPlot for simple or remote data,
+  HoloViews for multidimensional local data, and Datashader for large local data.
+- Use `show` instead when the user requests a specific custom chart, dashboard, or interaction
+  that the automatic loader does not produce.
 
 ## Choosing the Method
 
