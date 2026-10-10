@@ -45,7 +45,11 @@ def test_show_app_handles_data_only_inspection_payloads():
     """The MCP App presents inspection results instead of treating them as errors."""
     template = server_module.SHOW_TEMPLATE_PATH.read_text(encoding="utf-8")
     assert "parsedPayload.visualized === false" in template
-    assert "Possible visualizations:" in template
+    assert 'layout.classList.add("inspection")' in template
+    assert 'iframeWrapper.classList.add("inspection")' in template
+    assert 'title.textContent = "Dataset inspected"' in template
+    assert "background: Canvas" in template
+    assert "color: CanvasText" in template
 
 
 def test_packages_cli_lists_packages():

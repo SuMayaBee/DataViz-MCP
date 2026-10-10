@@ -456,6 +456,65 @@
 
       .panel-placeholder.visible { display: flex; }
 
+      /* Data-only inspection results are not visualizations. Keep this state
+         compact and use system colors so it remains readable in both light
+         and dark MCP hosts. */
+      .layout.inspection {
+        min-height: 0;
+        grid-template-rows: auto;
+        padding: 8px;
+      }
+
+      .layout.inspection .toolbar,
+      .layout.inspection .resize-handle {
+        display: none;
+      }
+
+      .iframe-wrapper.inspection {
+        height: auto;
+        min-height: 0;
+        overflow: visible;
+      }
+
+      .iframe-wrapper.inspection .panel-placeholder {
+        position: static;
+        display: block;
+        box-sizing: border-box;
+        padding: 14px 16px;
+        background: Canvas;
+        color: CanvasText;
+        border-color: rgba(120, 120, 120, 0.35);
+      }
+
+      .inspection-title {
+        margin: 0 0 6px;
+        font-size: 0.95rem;
+        font-weight: 650;
+      }
+
+      .inspection-summary {
+        margin: 0;
+        font-size: 0.84rem;
+        line-height: 1.45;
+        opacity: 0.85;
+      }
+
+      .inspection-recommendations {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 10px;
+      }
+
+      .inspection-recommendation {
+        padding: 3px 8px;
+        border: 1px solid rgba(120, 120, 120, 0.35);
+        border-radius: 999px;
+        background: rgba(120, 120, 120, 0.1);
+        color: inherit;
+        font-size: 0.76rem;
+      }
+
       .panel-placeholder a[role="button"] {
         font-size: 1rem;
         font-weight: 700;
@@ -528,7 +587,7 @@
           <div id="error-body" class="error-body"></div>
         </div>
         <div id="panel-placeholder" class="panel-placeholder">
-          <p class="placeholder-sub"></p>
+          <div class="placeholder-sub"></div>
         </div>
         <div id="code-panel" class="code-panel">
           <div class="code-panel-header">
@@ -953,9 +1012,12 @@
         renderTokenBadge(parsedPayload);
         errorPanel.classList.remove("visible");
         panelPlaceholder.classList.remove("visible");
+        panelPlaceholder.classList.remove("inspection");
+        panelPlaceholder.querySelector(".placeholder-sub").replaceChildren();
         closeCodeView();
         iframeWrapper.classList.remove("compact");
-        layout.classList.remove("compact");
+        iframeWrapper.classList.remove("inspection");
+        layout.classList.remove("compact", "inspection");
         // Each new tool result starts fresh: drop any custom height and hide the
         // grip until we confirm a real visualization is being shown below.
         layout.classList.remove("resized", "resizable");
@@ -969,11 +1031,28 @@
           iframe.style.display = "none";
           zoomButtons.forEach(({ btn }) => btn.style.display = "none");
           const recommendations = parsedPayload.analysis?.recommendations || [];
-          const recommendationText = recommendations.length
-            ? ` Possible visualizations: ${recommendations.map(item => item.type).join(", ")}.`
-            : "";
-          panelPlaceholder.querySelector(".placeholder-sub").textContent =
-            `${parsedPayload.message || "Dataset inspected."}${recommendationText}`;
+          const content = panelPlaceholder.querySelector(".placeholder-sub");
+          const title = document.createElement("h3");
+          title.className = "inspection-title";
+          title.textContent = "Dataset inspected";
+          const summary = document.createElement("p");
+          summary.className = "inspection-summary";
+          summary.textContent = parsedPayload.message || "Dataset inspected without creating a visualization.";
+          content.replaceChildren(title, summary);
+          if (recommendations.length) {
+            const recommendationList = document.createElement("div");
+            recommendationList.className = "inspection-recommendations";
+            recommendations.forEach((item) => {
+              const badge = document.createElement("span");
+              badge.className = "inspection-recommendation";
+              badge.textContent = item.type;
+              recommendationList.appendChild(badge);
+            });
+            content.appendChild(recommendationList);
+          }
+          layout.classList.add("inspection");
+          iframeWrapper.classList.add("inspection");
+          panelPlaceholder.classList.add("inspection");
           panelPlaceholder.classList.add("visible");
         } else if (isPanelServer) {
           hideSpinner();
