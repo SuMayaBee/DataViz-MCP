@@ -32,7 +32,7 @@ from dataviz_mcp.config import get_config
 from dataviz_mcp.data_loader import BIG_DATA_ROWS
 from dataviz_mcp.data_loader import build_visualization_code
 from dataviz_mcp.data_loader import inspect_dataframe
-from dataviz_mcp.data_loader import load_dataframe
+from dataviz_mcp.data_loader import load_dataset
 from dataviz_mcp.data_loader import profile_dataframe
 from dataviz_mcp.manager import PanelServerManager
 from dataviz_mcp.prompts import render as render_prompt
@@ -358,7 +358,8 @@ mcp = FastMCP(
         "visualizations as live, interactive web pages.\n\n"
         "WORKFLOW:\n"
         "Call `load_data(source, visualize=False)` when the user only asks to inspect, summarize, describe, or understand a dataset; "
-        "return analysis and plot recommendations without rendering anything.\n"
+        "return analysis and plot recommendations without rendering anything. "
+        "Do not call `show` afterward unless the user explicitly asks for a plot or visualization.\n"
         "Call `load_data(source, name, visualize=True)` when the user asks to plot, chart, show, or visualize a local data file or remote data URL; "
         "it profiles the dataset and automatically chooses hvPlot, HoloViews, or Datashader.\n"
         "Call `show(code, name, method)` to render a custom visualization.\n"
@@ -641,17 +642,21 @@ async def load_data(
     """Inspect tabular data and optionally render a suitable plot.
 
     Use this tool when the user supplies a local file path or an HTTP(S) URL
-    rather than visualization code. It supports CSV, JSON, JSONL, NDJSON, and
-    Parquet data. With ``visualize=False``, it returns schema, missing values,
+    rather than visualization code. It supports CSV, JSON, JSONL, NDJSON,
+    Parquet, and NetCDF data. With ``visualize=False``, it returns schema, missing values,
     duplicate count, statistics, preview records, and plot recommendations
     without creating a visualization or feed entry.
 
+    Before loading, the tool counts or estimates rows, reads format metadata,
+    and takes a bounded sample. Source location (local or remote) is reported
+    separately from structural classification. Large sources are profiled from
+    at most 10,000 rows instead of being retained completely in memory.
+
     With ``visualize=True``, it chooses a rendering strategy:
 
-    - remote data: a standard hvPlot chart
-    - large local data: a Datashader-backed plot
-    - local data with at least three numeric dimensions: a HoloViews plot
-    - other local data: a standard hvPlot chart
+    - large data: a Datashader-backed plot over a bounded sample
+    - data with at least three numeric dimensions: a HoloViews plot
+    - other data: a standard hvPlot chart
 
     The response includes the detected category, dataset shape, selected
     columns, and rendering strategy together with the normal visualization URL.
@@ -683,10 +688,11 @@ async def load_data(
         raise ToolError("Provide a local data file path or an HTTP(S) data URL.")
 
     try:
-        frame, source_kind = await asyncio.to_thread(load_dataframe, source)
+        threshold = max(1_000, big_data_rows)
+        frame, metadata = await asyncio.to_thread(load_dataset, source, threshold)
         if frame.empty:
             raise ValueError("The dataset is empty.")
-        profile = profile_dataframe(frame, source_kind, max(1_000, big_data_rows))
+        profile = profile_dataframe(frame, metadata.source_kind, threshold, metadata)
         display_name = name.strip() or Path(urlparse(source).path).stem or "Loaded data"
     except (OSError, ValueError, requests.RequestException) as exc:
         raise ToolError(f"Could not load data: {exc}") from exc

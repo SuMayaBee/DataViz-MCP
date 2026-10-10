@@ -49,15 +49,16 @@ declaration and is subject to the substring trap described in
 
 ## Loading or Inspecting Data
 
-Use `load_data` for supported local or remote tabular sources instead of writing loading and
-profiling code by hand.
+Use `load_data` for supported local or remote tabular or NetCDF sources instead of writing loading
+and profiling code by hand.
 
 - If the user asks only to inspect, summarize, describe, or understand the data, call
   `load_data(source=..., visualize=False)`. Explain the returned schema, quality statistics,
   preview, classification, and plot recommendations. Do not create a plot or feed entry.
 - If the user asks to plot, chart, show, or visualize the data automatically, call
-  `load_data(source=..., visualize=True)`. It selects hvPlot for simple or remote data,
-  HoloViews for multidimensional local data, and Datashader for large local data.
+  `load_data(source=..., visualize=True)`. Source location is separate from data shape: it selects
+  hvPlot for normal data, HoloViews for multidimensional data, and Datashader for large data.
+  NetCDF sources are inspected with Xarray and report labeled dimensions and data variables.
 - Use `show` instead when the user requests a specific custom chart, dashboard, or interaction
   that the automatic loader does not produce.
 

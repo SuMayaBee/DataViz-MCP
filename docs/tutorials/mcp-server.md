@@ -52,6 +52,11 @@ dataset shape, column types, missing and duplicate counts, numeric statistics, f
 records, and recommendations explaining which columns and plotting libraries fit each view.
 Nothing is stored in the visualization feed.
 
+`load_data` first counts or estimates records and reads a bounded sample. If the source is
+large, the response marks `profile_mode` as `sampled`; reported quality statistics then apply
+to the sample while `shape.rows` reports the estimated or metadata row count. Whether the
+source is local or remote is independent of its normal, multidimensional, or large category.
+
 ---
 
 ## Step 4: Create your first AI-assisted visualization

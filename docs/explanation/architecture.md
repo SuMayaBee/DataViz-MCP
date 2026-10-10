@@ -40,16 +40,25 @@ data loading, custom rendering, visual inspection, targeted editing, and text-on
 
 ### `load_data`: profile data and choose a renderer
 
-`load_data` accepts a local CSV, JSON, JSONL, NDJSON, or Parquet path, or an HTTP(S)
-URL. It reads the dataset, reports its shape and detected column types, and creates a
-visualization without requiring the assistant to write plotting code. Remote and simple
-data use hvPlot, multidimensional local data uses HoloViews, and local datasets with at
-least 100,000 rows use Datashader-backed rasterization. The row threshold can be adjusted
-per call.
+`load_data` accepts a local CSV, JSON, JSONL, NDJSON, Parquet, or NetCDF (`.nc`) path, or an HTTP(S)
+URL. It performs a preflight pass before deciding how much data to retain. CSV and JSONL
+records are counted by streaming, Parquet row counts come from metadata, and a bounded
+sample is used to infer columns and estimate memory. Source location is reported separately:
+a remote dataset can still be classified as normal, multidimensional, or large.
+NetCDF metadata is inspected through Xarray without flattening the complete array first. The
+largest numeric data variable is selected, its labeled dimensions are retained in the profile,
+and only a bounded tidy sample is materialized when the array is large.
+
+Classification considers row count, file size, estimated in-memory size, and column count.
+Large sources (100,000 rows, 100 MB, approximately 500 MB in memory, or 500 columns by
+default) retain at most 10,000 rows for profiling and Datashader rendering. Data with at
+least three numeric dimensions uses HoloViews; remaining data uses hvPlot. Thresholds are
+evaluated before a large source is retained completely in memory.
 
 For a data-only request, `load_data(source=..., visualize=False)` skips rendering and returns
 the schema, missing and duplicate counts, numeric statistics, a five-row preview, and chart
 recommendations. This inspection mode does not create a snippet or add anything to the feed.
+The response states whether statistics cover the complete dataset or a bounded sample.
 
 ```python
 load_data(source="sales.csv", visualize=False)  # inspect and recommend only
