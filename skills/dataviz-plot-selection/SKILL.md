@@ -14,7 +14,7 @@ explicitly requests unless it would be misleading or cannot render.
 1. Identify the analytical intent: trend, comparison, distribution, relationship, composition,
    geography, hierarchy, flow, or multidimensional exploration.
 2. Inspect the relevant columns, types, missing values, cardinality, row count, units, and time
-   grain. When the user only asks about the data, call `load_data(..., visualize=False)` and
+   grain or labeled dimensions. When the user only asks about the data, call `load_data(..., visualize=False)` and
    explain the returned analysis and recommendations without rendering. When the user asks for
    automatic plotting, call `load_data(..., visualize=True)`. Use `show` for a custom chart or
    dashboard.
@@ -28,13 +28,18 @@ explicitly requests unless it would be misleading or cannot render.
 
 ## Data-scale routing
 
-- Remote data: use `load_data`; it validates the format and uses the normal hvPlot path.
-- Local data with at least 100,000 rows: use the Datashader strategy. Prefer `rasterize=True`
+- Treat `local` and `remote` as source locations, not data shapes. Classify either source as
+  normal, multidimensional, or large after metadata inspection.
+- NetCDF data: use `load_data`; it inspects Xarray dimensions and variables, chooses a numeric
+  data variable, and creates a bounded tidy view. For a time-latitude-longitude cube, prefer one
+  time slice with longitude and latitude as position and the selected variable as color.
+- Data with at least 100,000 rows or cells, 100 MB on disk, about 500 MB estimated in memory, or
+  500 columns: use the Datashader strategy. Prefer `rasterize=True`
   for numeric point density so axes, hover, and color mapping remain interactive.
-- Local data with at least three numeric dimensions: use HoloViews and encode the additional
+- Data with at least three numeric dimensions or labeled array dimensions: use HoloViews and encode the additional
   dimensions through color, size, facets, or linked views. Do not force every dimension into one
   overloaded plot.
-- Smaller local data: use hvPlot unless the requested interaction needs HoloViews or Panel.
+- Smaller normal data: use hvPlot unless the requested interaction needs HoloViews or Panel.
 
 ## Integrity rules
 

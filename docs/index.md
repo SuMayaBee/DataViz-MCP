@@ -32,7 +32,9 @@ are exposed:
 
 - **`load_data`**: reads local or remote tabular data. For data-only questions it returns schema,
   quality statistics, preview records, and suitable visualization recommendations without
-  rendering. For plotting requests it automatically selects hvPlot, HoloViews, or Datashader
+  rendering. It preflights row count, size, schema, and estimated memory before choosing a
+  complete or sampled profile. For plotting requests it automatically selects hvPlot,
+  HoloViews, or Datashader
 - **`show`**: validates the code (syntax, security, package availability, Panel extensions) and then executes it, returning a live, interactive visualization — no manual setup and no separate validation step required. The AI is instructed to reach for HoloViz packages (hvPlot, HoloViews, Panel) first, falling back to other well-known libraries only when needed
 - **`screenshot`**: captures a picture of an already-rendered visualization and hands it back to the AI, so it can answer follow-up questions about how the chart looks by inspecting the actual image instead of guessing from raw data
 - **`edit`**: applies a targeted change to a private draft without resending the entire visualization
