@@ -71,6 +71,9 @@ To load and visualize tabular data automatically, ask the assistant to call
 `load_data(source=...)` with a local CSV, JSON, JSONL, NDJSON, or Parquet path,
 or an HTTP(S) URL. The tool profiles the data and selects hvPlot for simple or
 remote data, HoloViews for multidimensional data, and Datashader for large data.
+Set `visualize=False` when the request is only to inspect or understand the data;
+the same tool returns schema, quality statistics, a preview, and recommended chart
+types without creating a visualization or feed entry.
 
 The packaged [`dataviz-plot-selection`](skills/dataviz-plot-selection/SKILL.md)
 skill guides chart choice for trends, comparisons, distributions, relationships,

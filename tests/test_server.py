@@ -41,6 +41,13 @@ def test_plot_selection_skill_is_loaded_into_server_instructions():
     assert "Datashader" in mcp.instructions
 
 
+def test_show_app_handles_data_only_inspection_payloads():
+    """The MCP App presents inspection results instead of treating them as errors."""
+    template = server_module.SHOW_TEMPLATE_PATH.read_text(encoding="utf-8")
+    assert "parsedPayload.visualized === false" in template
+    assert "Possible visualizations:" in template
+
+
 def test_packages_cli_lists_packages():
     """Test pls list packages prints installed packages."""
     runner = CliRunner()

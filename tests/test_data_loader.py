@@ -7,6 +7,7 @@ import pytest
 
 import dataviz_mcp.server as server_module
 from dataviz_mcp.data_loader import build_visualization_code
+from dataviz_mcp.data_loader import inspect_dataframe
 from dataviz_mcp.data_loader import load_dataframe
 from dataviz_mcp.data_loader import profile_dataframe
 
@@ -61,6 +62,19 @@ def test_multidimensional_code_uses_holoviews(tmp_path):
     assert "color = 'z'" in code
 
 
+def test_inspection_reports_quality_statistics_and_recommendations():
+    frame = pd.DataFrame({"month": ["Jan", "Feb", "Feb"], "sales": [10.0, None, 12.0]})
+    profile = profile_dataframe(frame, "local")
+
+    analysis = inspect_dataframe(frame, profile)
+
+    assert analysis["shape"] == {"rows": 3, "columns": 2}
+    assert analysis["missing_values"] == 1
+    assert analysis["duplicate_rows"] == 0
+    assert len(analysis["preview"]) == 3
+    assert {item["type"] for item in analysis["recommendations"]} >= {"Line chart", "Bar chart", "Histogram"}
+
+
 @pytest.mark.parametrize(
     ("frame", "threshold", "strategy"),
     [
@@ -95,6 +109,26 @@ async def test_load_data_returns_profile_with_render_payload(monkeypatch):
     payload = json.loads(await server_module.load_data("sales.csv", name="Sales"))
 
     assert payload["tool"] == "load_data"
+    assert payload["visualized"] is True
     assert payload["data_profile"]["category"] == "simple_data"
     assert payload["data_profile"]["strategy"] == "hvplot"
     assert payload["url"].endswith("id=1")
+
+
+@pytest.mark.asyncio
+async def test_load_data_inspection_mode_does_not_render(monkeypatch):
+    frame = pd.DataFrame({"category": ["A", "B"], "value": [3, 7]})
+    monkeypatch.setattr(server_module, "load_dataframe", lambda source: (frame, "local"))
+
+    async def forbidden_show(**kwargs):
+        pytest.fail("show must not be called in inspection mode")
+
+    monkeypatch.setattr(server_module, "show", forbidden_show)
+
+    payload = json.loads(await server_module.load_data("sales.csv", visualize=False))
+
+    assert payload["status"] == "success"
+    assert payload["visualized"] is False
+    assert "url" not in payload
+    assert payload["analysis"]["shape"] == {"rows": 2, "columns": 2}
+    assert payload["analysis"]["recommendations"]

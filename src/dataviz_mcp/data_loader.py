@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import io
+import json
 from dataclasses import asdict
 from dataclasses import dataclass
 from pathlib import Path
@@ -34,6 +35,110 @@ class DataProfile:
         result["numeric_columns"] = list(self.numeric_columns)
         result["categorical_columns"] = list(self.categorical_columns)
         return result
+
+
+def recommend_visualizations(frame: pd.DataFrame, profile: DataProfile) -> list[dict[str, str]]:
+    """Recommend useful visualization types from the dataset structure."""
+    recommendations: list[dict[str, str]] = []
+    numeric = list(profile.numeric_columns)
+    categorical = list(profile.categorical_columns)
+    time_columns = [
+        str(column)
+        for column in frame.columns
+        if pd.api.types.is_datetime64_any_dtype(frame[column]) or any(token in str(column).lower() for token in ("date", "time", "year", "month"))
+    ]
+
+    if profile.category == "big_data" and len(numeric) >= 2:
+        recommendations.append(
+            {
+                "type": "Datashader scatter plot",
+                "columns": f"{numeric[0]} vs {numeric[1]}",
+                "reason": "Rasterization keeps a dense dataset responsive and reveals point concentration.",
+                "library": "Datashader through hvPlot",
+            }
+        )
+    if time_columns and numeric:
+        recommendations.append(
+            {
+                "type": "Line chart",
+                "columns": f"{time_columns[0]} and {numeric[0]}",
+                "reason": "Shows how the numeric measure changes over time.",
+                "library": "hvPlot",
+            }
+        )
+    if categorical and numeric:
+        recommendations.append(
+            {
+                "type": "Bar chart",
+                "columns": f"{categorical[0]} and {numeric[0]}",
+                "reason": "Compares an aggregated numeric measure across categories.",
+                "library": "hvPlot",
+            }
+        )
+    if len(numeric) >= 2:
+        recommendations.append(
+            {
+                "type": "Scatter plot",
+                "columns": f"{numeric[0]} vs {numeric[1]}",
+                "reason": "Reveals association, clusters, and outliers between two numeric variables.",
+                "library": "HoloViews" if len(numeric) >= 3 else "hvPlot",
+            }
+        )
+    if len(numeric) >= 3:
+        recommendations.append(
+            {
+                "type": "Multidimensional scatter plot",
+                "columns": f"{numeric[0]}, {numeric[1]}, and {numeric[2]}",
+                "reason": "Uses position and color to explore three numeric dimensions together.",
+                "library": "HoloViews",
+            }
+        )
+    if numeric:
+        recommendations.append(
+            {
+                "type": "Histogram",
+                "columns": numeric[0],
+                "reason": "Shows the distribution, spread, and possible skew of a numeric variable.",
+                "library": "hvPlot",
+            }
+        )
+    if categorical:
+        recommendations.append(
+            {
+                "type": "Count bar chart",
+                "columns": categorical[0],
+                "reason": "Shows the frequency of each category.",
+                "library": "hvPlot",
+            }
+        )
+    return recommendations
+
+
+def inspect_dataframe(frame: pd.DataFrame, profile: DataProfile) -> dict:
+    """Build a JSON-safe structural and statistical summary of *frame*."""
+    columns = [
+        {
+            "name": str(column),
+            "dtype": str(frame[column].dtype),
+            "missing": int(frame[column].isna().sum()),
+            "unique": int(frame[column].nunique(dropna=True)),
+        }
+        for column in frame.columns
+    ]
+    numeric_summary: dict = {}
+    if profile.numeric_columns:
+        summary = frame[list(profile.numeric_columns)].describe().round(4)
+        numeric_summary = json.loads(summary.to_json())
+    preview = json.loads(frame.head(5).to_json(orient="records", date_format="iso"))
+    return {
+        "shape": {"rows": profile.rows, "columns": profile.columns},
+        "columns": columns,
+        "missing_values": int(frame.isna().sum().sum()),
+        "duplicate_rows": int(frame.duplicated().sum()),
+        "numeric_summary": numeric_summary,
+        "preview": preview,
+        "recommendations": recommend_visualizations(frame, profile),
+    }
 
 
 def is_remote_source(source: str) -> bool:

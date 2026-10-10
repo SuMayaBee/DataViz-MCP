@@ -47,6 +47,10 @@ data use hvPlot, multidimensional local data uses HoloViews, and local datasets 
 least 100,000 rows use Datashader-backed rasterization. The row threshold can be adjusted
 per call.
 
+For a data-only request, `load_data(source=..., visualize=False)` skips rendering and returns
+the schema, missing and duplicate counts, numeric statistics, a five-row preview, and chart
+recommendations. This inspection mode does not create a snippet or add anything to the feed.
+
 ```python
 load_data(source="sales.csv", name="Sales overview")
 ```

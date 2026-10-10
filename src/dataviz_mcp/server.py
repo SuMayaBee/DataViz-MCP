@@ -31,6 +31,7 @@ from dataviz_mcp.client import DisplayClient
 from dataviz_mcp.config import get_config
 from dataviz_mcp.data_loader import BIG_DATA_ROWS
 from dataviz_mcp.data_loader import build_visualization_code
+from dataviz_mcp.data_loader import inspect_dataframe
 from dataviz_mcp.data_loader import load_dataframe
 from dataviz_mcp.data_loader import profile_dataframe
 from dataviz_mcp.manager import PanelServerManager
@@ -356,7 +357,9 @@ mcp = FastMCP(
         "DataViz MCP executes Python code snippets and renders the resulting "
         "visualizations as live, interactive web pages.\n\n"
         "WORKFLOW:\n"
-        "Call `load_data(source, name)` when the user provides a local data file or remote data URL; "
+        "Call `load_data(source, visualize=False)` when the user only asks to inspect, summarize, describe, or understand a dataset; "
+        "return analysis and plot recommendations without rendering anything.\n"
+        "Call `load_data(source, name, visualize=True)` when the user asks to plot, chart, show, or visualize a local data file or remote data URL; "
         "it profiles the dataset and automatically chooses hvPlot, HoloViews, or Datashader.\n"
         "Call `show(code, name, method)` to render a custom visualization.\n"
         "Static validation (syntax, security, packages) runs in ~50 ms.\n"
@@ -630,15 +633,20 @@ async def load_data(
     source: str,
     name: str = "",
     description: str = "",
+    visualize: bool = True,
     big_data_rows: int = BIG_DATA_ROWS,
     zoom: int = 75,
     ctx: Context | None = None,
 ) -> str:
-    """Load tabular data, identify its type, and render a suitable plot.
+    """Inspect tabular data and optionally render a suitable plot.
 
     Use this tool when the user supplies a local file path or an HTTP(S) URL
     rather than visualization code. It supports CSV, JSON, JSONL, NDJSON, and
-    Parquet data. The tool inspects the actual dataset and chooses a strategy:
+    Parquet data. With ``visualize=False``, it returns schema, missing values,
+    duplicate count, statistics, preview records, and plot recommendations
+    without creating a visualization or feed entry.
+
+    With ``visualize=True``, it chooses a rendering strategy:
 
     - remote data: a standard hvPlot chart
     - large local data: a Datashader-backed plot
@@ -656,6 +664,10 @@ async def load_data(
         Display name. Defaults to the source filename.
     description : str, optional
         One-sentence description shown with the visualization.
+    visualize : bool, default True
+        Use ``False`` when the user only asks to inspect, summarize, describe,
+        or understand the data. Use ``True`` when the user explicitly asks to
+        plot, chart, show, or visualize it.
     big_data_rows : int, default 100000
         Row count at which a local dataset uses Datashader. Values below 1000
         are clamped to 1000 to avoid accidental misclassification.
@@ -676,9 +688,25 @@ async def load_data(
             raise ValueError("The dataset is empty.")
         profile = profile_dataframe(frame, source_kind, max(1_000, big_data_rows))
         display_name = name.strip() or Path(urlparse(source).path).stem or "Loaded data"
-        code = build_visualization_code(source, frame, profile, display_name)
     except (OSError, ValueError, requests.RequestException) as exc:
         raise ToolError(f"Could not load data: {exc}") from exc
+
+    if not visualize:
+        payload = {
+            "tool": "load_data",
+            "status": "success",
+            "visualized": False,
+            "source": source,
+            "data_profile": profile.to_dict(),
+            "analysis": inspect_dataframe(frame, profile),
+            "message": (
+                f"Inspected {profile.rows:,} rows and {profile.columns} columns; detected {profile.category.replace('_', ' ')}. No visualization was created."
+            ),
+        }
+        _attach_token_count(payload)
+        return json.dumps(payload)
+
+    code = build_visualization_code(source, frame, profile, display_name)
 
     rendered = await show(
         code=code,
@@ -690,6 +718,7 @@ async def load_data(
     )
     payload = json.loads(rendered)
     payload["tool"] = "load_data"
+    payload["visualized"] = True
     payload["source"] = source
     payload["data_profile"] = profile.to_dict()
     payload["message"] = (

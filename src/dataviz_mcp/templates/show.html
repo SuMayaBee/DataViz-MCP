@@ -962,7 +962,20 @@
         iframeWrapper.style.height = "";
         zoomButtons.forEach(({ btn }) => btn.style.display = "");
 
-        if (isPanelServer) {
+        if (parsedPayload && parsedPayload.visualized === false) {
+          hideSpinner();
+          iframe.removeAttribute("srcdoc");
+          iframe.src = "about:blank";
+          iframe.style.display = "none";
+          zoomButtons.forEach(({ btn }) => btn.style.display = "none");
+          const recommendations = parsedPayload.analysis?.recommendations || [];
+          const recommendationText = recommendations.length
+            ? ` Possible visualizations: ${recommendations.map(item => item.type).join(", ")}.`
+            : "";
+          panelPlaceholder.querySelector(".placeholder-sub").textContent =
+            `${parsedPayload.message || "Dataset inspected."}${recommendationText}`;
+          panelPlaceholder.classList.add("visible");
+        } else if (isPanelServer) {
           hideSpinner();
           iframe.removeAttribute("srcdoc");
           iframe.src = "about:blank";

@@ -14,8 +14,10 @@ explicitly requests unless it would be misleading or cannot render.
 1. Identify the analytical intent: trend, comparison, distribution, relationship, composition,
    geography, hierarchy, flow, or multidimensional exploration.
 2. Inspect the relevant columns, types, missing values, cardinality, row count, units, and time
-   grain. Use `load_data` when the user provides a local supported file or remote data URL and
-   wants automatic selection. Use `show` for a custom chart or dashboard.
+   grain. When the user only asks about the data, call `load_data(..., visualize=False)` and
+   explain the returned analysis and recommendations without rendering. When the user asks for
+   automatic plotting, call `load_data(..., visualize=True)`. Use `show` for a custom chart or
+   dashboard.
 3. Select the chart and encodings from [references/use-cases.md](references/use-cases.md).
 4. Prefer hvPlot for ordinary DataFrame plots, HoloViews for composable or multidimensional
    views, Datashader for dense large data, and Panel for widgets or multi-view dashboards.
