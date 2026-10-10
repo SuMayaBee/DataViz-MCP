@@ -26,12 +26,17 @@ Use whichever fits how you work, or run both.
 
 ## MCP Server: AI assistant integration
 
-Give Claude, GitHub Copilot, Cursor, or any MCP-compatible AI assistant the ability to render
-visualizations directly in your IDE, and to actually see what it just rendered. Two tools are
-exposed:
+Give Claude, GitHub Copilot, Cursor, or any MCP-compatible AI assistant the ability to inspect
+datasets, render visualizations directly in your IDE, and see what it just rendered. Five tools
+are exposed:
 
+- **`load_data`**: reads local or remote tabular data. For data-only questions it returns schema,
+  quality statistics, preview records, and suitable visualization recommendations without
+  rendering. For plotting requests it automatically selects hvPlot, HoloViews, or Datashader
 - **`show`**: validates the code (syntax, security, package availability, Panel extensions) and then executes it, returning a live, interactive visualization — no manual setup and no separate validation step required. The AI is instructed to reach for HoloViz packages (hvPlot, HoloViews, Panel) first, falling back to other well-known libraries only when needed
 - **`screenshot`**: captures a picture of an already-rendered visualization and hands it back to the AI, so it can answer follow-up questions about how the chart looks by inspecting the actual image instead of guessing from raw data
+- **`edit`**: applies a targeted change to a private draft without resending the entire visualization
+- **`evaluate`**: runs text-only Python checks without creating a visualization or feed entry
 
 <video controls autoplay muted loop style="width: 100%; max-width: 100%;">
   <source src="assets/videos/dataviz-mcp-showcase-mcp.mp4" type="video/mp4">
@@ -65,6 +70,10 @@ See the [Installation tutorial](tutorials/installation.md) for per-package-manag
 details and connecting to your MCP client.
 
 Ask your AI assistant:
+
+> Inspect penguins.csv, summarize its structure and data quality, and recommend useful visualizations without creating one.
+
+> Load penguins.csv and visualize it automatically.
 
 > Please show a quick and beautiful Matplotlib trading dashboard
 

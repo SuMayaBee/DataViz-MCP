@@ -33,7 +33,7 @@ uv tool install "dataviz-mcp[pydata]"
 ```
 
 > **Pin your version** — this project is in its early stages. Pin to a specific version to avoid
-> unexpected changes: `uv tool install "dataviz-mcp[pydata]==0.1.0a1"`
+> unexpected changes: `uv tool install "dataviz-mcp[pydata]==0.3.0"`
 
 ## Connect to your AI assistant
 

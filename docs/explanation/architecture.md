@@ -52,7 +52,8 @@ the schema, missing and duplicate counts, numeric statistics, a five-row preview
 recommendations. This inspection mode does not create a snippet or add anything to the feed.
 
 ```python
-load_data(source="sales.csv", name="Sales overview")
+load_data(source="sales.csv", visualize=False)  # inspect and recommend only
+load_data(source="sales.csv", name="Sales overview", visualize=True)  # render automatically
 ```
 
 The **assistant** cannot install packages. It writes code against whatever is already in the
